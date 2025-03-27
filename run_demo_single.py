@@ -85,10 +85,9 @@ class Demo(nn.Module):
         self.args = args
 
         model_path = args.model_path
-
         print('==> loading model')
         self.gen = Generator(args.size, args.latent_dim_style, args.latent_dim_motion, args.channel_multiplier).cuda()
-        weight = torch.load(model_path, map_location=lambda storage, loc: storage)['gen']
+        weight = torch.load(model_path, weights_only=False, map_location=lambda storage, loc: storage)['gen']
         self.gen.load_state_dict(weight)
         self.gen.eval()
 
