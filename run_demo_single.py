@@ -131,6 +131,7 @@ class Demo(nn.Module):
         print('==> running')
         with torch.no_grad():
             l = min(len(self.pose_img), len(self.exp_img))
+            print(l)
             for i in tqdm(range(l)):
                 img_pose = self.pose_img[i]
                 img_exp = self.exp_img[i]
