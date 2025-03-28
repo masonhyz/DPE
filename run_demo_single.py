@@ -18,6 +18,8 @@ from PIL import Image
 from pathlib import Path
 from tqdm import tqdm
 import collections
+import random
+
 
 def load_image(filename, size):
     img = Image.open(filename).convert('RGB')
@@ -112,9 +114,14 @@ class Demo(nn.Module):
             img = Image.fromarray(cv2.cvtColor(i,cv2.COLOR_BGR2RGB))
             exp.append(img_preprocessing(img,256).cuda())
 
-        self.s_img = s_img
-        self.pose_img = pose
-        self.exp_img = exp
+        self.s_img = s_img  # don't need
+        # self.pose_img = pose  # random frame from whichever video
+        # self.exp_img = exp  # random frame from whichever video
+
+        self.pose_img = [random.choice(exp)]
+        self.exp_img = [random.choice(exp)]
+
+
         self.run()
 
 
@@ -128,6 +135,9 @@ class Demo(nn.Module):
         crop_vi = os.path.join(output_dir, 's.mp4')
         out_s = cv2.VideoWriter(crop_vi, cv2.VideoWriter_fourcc(*'mp4v'), 25, (256,256))
 
+        crop_vi = os.path.join(output_dir, 'exp.mp4')
+        out_exp = cv2.VideoWriter(crop_vi, cv2.VideoWriter_fourcc(*'mp4v'), 25, (256,256))
+
         print('==> running')
         with torch.no_grad():
             l = min(len(self.pose_img), len(self.exp_img))
@@ -135,9 +145,11 @@ class Demo(nn.Module):
             for i in tqdm(range(l)):
                 img_pose = self.pose_img[i]
                 img_exp = self.exp_img[i]
-                img_source = self.s_img
+                # img_source = self.s_img
+                img_source = img_pose
+                
                 output_dict = self.gen(img_source, img_exp, 'exp')
-                output_dict = self.gen(output_dict, img_pose, 'pose')
+                # output_dict = self.gen(output_dict, img_pose, 'pose')
                 fake = output_dict
                 fake = fake.cpu().clamp(-1, 1)
 
@@ -153,8 +165,15 @@ class Demo(nn.Module):
                 video_numpy = cv2.cvtColor(video_numpy, cv2.COLOR_RGB2BGR)
                 out_s.write(video_numpy)
 
+                video_numpy = img_exp[:,:3,:,:].clone().cpu().float().detach().numpy()
+                video_numpy = (np.transpose(video_numpy, (0, 2, 3, 1)) + 1) / 2.0 * 255.0
+                video_numpy = video_numpy.astype(np.uint8)[0]
+                video_numpy = cv2.cvtColor(video_numpy, cv2.COLOR_RGB2BGR)
+                out_exp.write(video_numpy)
+
             out_edit.release()
             out_s.release()
+            out_exp.release()
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
