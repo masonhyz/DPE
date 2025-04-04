@@ -1,11 +1,8 @@
 
 import os
 import cv2 
-import lmdb
-import math
 import argparse
 import numpy as np
-from io import BytesIO
 from PIL import Image
 import torch
 import torch.nn as nn
@@ -15,9 +12,6 @@ import numpy as np
 import torchvision
 import os
 from PIL import Image
-from pathlib import Path
-from tqdm import tqdm
-import collections
 import random
 from insightface_backbone_conv import iresnet100
 from sklearn.metrics.pairwise import cosine_similarity
@@ -174,8 +168,9 @@ class Demo(nn.Module):
             print(info)
 
             normalize = torchvision.transforms.Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5])
-            
-            fake = normalize(torch.tensor(fake).float()).unsqueeze(0)
+            fake = torch.tensor(fake).float()
+            print(fake.shape)
+            fake = normalize(fake).unsqueeze(0)
             img_source = normalize(torch.tensor(img_source).float()).unsqueeze(0)
             id_fake = arcface(fake)
             id_source = arcface(img_source)
