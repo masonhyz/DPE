@@ -13,6 +13,7 @@ import random
 from insightface_backbone_conv import iresnet100
 from sklearn.metrics.pairwise import cosine_similarity
 import matplotlib.pyplot as plt
+import tqdm
 
 
 def load_image(filename, size):
@@ -170,7 +171,7 @@ class Demo(nn.Module):
         return np.transpose(source_img, (2, 0, 1)), np.transpose(exp_img, (2, 0, 1)), np.transpose(fake, (2, 0, 1)), cos_sim_scalar
 
     def run_batch(self, n):
-        for i in range(n):
+        for i in tqdm(range(n)):
             source_img, exp_img, fake_img, cos_sim_scalar = self.run()
 
             fig, axes = plt.subplots(1, 3, figsize=(12, 4))
