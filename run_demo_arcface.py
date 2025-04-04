@@ -91,7 +91,7 @@ class Demo(nn.Module):
         os.makedirs(self.save_path, exist_ok=True)
 
 
-        exp_img = video2imgs(args.exp_path)
+        exp_img = video2imgs(args.s_path)
 
         img = Image.open(args.s_path)
 
@@ -172,7 +172,10 @@ class Demo(nn.Module):
             id_source = np.transpose(id_source.numpy()[0], (1,0))
             
             sims = cosine_similarity(id_fake, id_source)
+
             print(sims.shape)
+
+
 
 
 
