@@ -12,6 +12,7 @@ import torchvision
 import random
 from insightface_backbone_conv import iresnet100
 from sklearn.metrics.pairwise import cosine_similarity
+import matplotlib.pyplot as plt
 
 
 def load_image(filename, size):
@@ -93,29 +94,27 @@ class Demo(nn.Module):
         # load source video
         source_video = video2imgs(args.s_path)   
         # preprocess     
-        source = []
+        self.source = []
         for i in source_video:
             img = Image.fromarray(cv2.cvtColor(i,cv2.COLOR_BGR2RGB))
-            source.append(img_preprocessing(img,256).cuda())
-        
-        # choose a random frame from source video as source img and expression
-        self.source_img = random.choice(source)
-        self.exp_img = random.choice(source)
-
-        self.run()
+            self.source.append(img_preprocessing(img,256).cuda())
 
 
     def run(self):
-        output_dir = self.save_path
+        # choose a random frame from source video as source img and expression
+        self.source_img = random.choice(self.source)
+        self.exp_img = random.choice(self.source)
 
-        crop_vi = os.path.join(output_dir, 'edit.mp4')
-        out_fake = cv2.VideoWriter(crop_vi, cv2.VideoWriter_fourcc(*'mp4v'), 25, (256,256))
+        # output_dir = self.save_path
 
-        crop_vi = os.path.join(output_dir, 'source.mp4')
-        out_source = cv2.VideoWriter(crop_vi, cv2.VideoWriter_fourcc(*'mp4v'), 25, (256,256))
+        # crop_vi = os.path.join(output_dir, 'edit.mp4')
+        # out_fake = cv2.VideoWriter(crop_vi, cv2.VideoWriter_fourcc(*'mp4v'), 25, (256,256))
 
-        crop_vi = os.path.join(output_dir, 'exp.mp4')
-        out_exp = cv2.VideoWriter(crop_vi, cv2.VideoWriter_fourcc(*'mp4v'), 25, (256,256))
+        # crop_vi = os.path.join(output_dir, 'source.mp4')
+        # out_source = cv2.VideoWriter(crop_vi, cv2.VideoWriter_fourcc(*'mp4v'), 25, (256,256))
+
+        # crop_vi = os.path.join(output_dir, 'exp.mp4')
+        # out_exp = cv2.VideoWriter(crop_vi, cv2.VideoWriter_fourcc(*'mp4v'), 25, (256,256))
 
         print('==> running')
         with torch.no_grad():
@@ -132,25 +131,25 @@ class Demo(nn.Module):
             fake = (np.transpose(fake, (0, 2, 3, 1)) + 1) / 2.0 * 255.0
             fake = fake.astype(np.uint8)[0]
             fake = cv2.cvtColor(fake, cv2.COLOR_RGB2BGR)
-            out_fake.write(fake)
+            # out_fake.write(fake)
 
             source_img = source_img[:,:3,:,:].clone().cpu().float().detach().numpy()
             source_img = (np.transpose(source_img, (0, 2, 3, 1)) + 1) / 2.0 * 255.0
             source_img = source_img.astype(np.uint8)[0]
             source_img = cv2.cvtColor(source_img, cv2.COLOR_RGB2BGR)
-            out_source.write(source_img)
+            # out_source.write(source_img)
 
             exp_img = exp_img[:,:3,:,:].clone().cpu().float().detach().numpy()
             exp_img = (np.transpose(exp_img, (0, 2, 3, 1)) + 1) / 2.0 * 255.0
             exp_img = exp_img.astype(np.uint8)[0]
             exp_img = cv2.cvtColor(exp_img, cv2.COLOR_RGB2BGR)
-            out_exp.write(exp_img)
+            # out_exp.write(exp_img)
 
-            out_fake.release()
-            out_source.release()
-            out_exp.release()
+            # out_fake.release()
+            # out_source.release()
+            # out_exp.release()
 
-        print("==>evaluating")
+        print("==> evaluating")
         with torch.no_grad():
             ckpt = 'checkpoints/insightface_glint360k.pth'
             arcface = iresnet100().eval()
@@ -158,13 +157,8 @@ class Demo(nn.Module):
             print(info)
 
             # calculate ids
-            fake = torch.tensor(fake).float().permute(2,0,1)
-            fake = fake.unsqueeze(0)
-            source_img = torch.tensor(source_img).float().permute(2,0,1).unsqueeze(0)
-            id_fake = arcface(fake)
-            id_source = arcface(source_img)
-            print(id_fake.shape)
-            print(id_source.shape)
+            id_fake = arcface(torch.tensor(fake).float().permute(2,0,1).unsqueeze(0))
+            id_source = arcface(torch.tensor(source_img).float().permute(2,0,1).unsqueeze(0))
 
             # compute cosine similarities
             id_fake = np.transpose(id_fake.numpy()[0], (1,0))
@@ -172,6 +166,28 @@ class Demo(nn.Module):
             cos_sim_matrix = cosine_similarity(id_fake, id_source)
             cos_sim_scalar = np.mean(np.diag(cos_sim_matrix))
             print(cos_sim_scalar)
+        
+        return np.transpose(source_img, (2, 0, 1)), np.transpose(exp_img, (2, 0, 1)), np.transpose(fake, (2, 0, 1)), cos_sim_scalar
+
+    def run_batch(self, n):
+        for i in range(n):
+            source_img, exp_img, fake_img, cos_sim_scalar = self.run()
+
+            fig, axes = plt.subplots(1, 3, figsize=(12, 4))
+            fig.suptitle(f"Cosine Similarity: {cos_sim_scalar:.4f}", fontsize=16)
+
+            titles = ["Source Image", "Expression Image", "Generated Image"]
+            images = [source_img, exp_img, fake_img]
+
+            for ax, img, title in zip(axes, images, titles):
+                ax.imshow(img)
+                ax.set_title(title)
+                ax.axis("off")
+
+            plt.tight_layout()
+            plt.subplots_adjust(top=0.85)  # leave space for suptitle
+            plt.savefig(os.path.join(self.save_path, f"comparison_{i}.png"))
+            plt.close()
 
 
 if __name__ == '__main__':
@@ -189,3 +205,4 @@ if __name__ == '__main__':
 
     # demo
     demo = Demo(args)
+    demo.run_batch(10)
