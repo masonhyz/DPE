@@ -7,11 +7,8 @@ from PIL import Image
 import torch
 import torch.nn as nn
 from networks.generator import Generator
-import argparse
 import numpy as np
 import torchvision
-import os
-from PIL import Image
 import random
 from insightface_backbone_conv import iresnet100
 from sklearn.metrics.pairwise import cosine_similarity
