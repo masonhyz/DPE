@@ -164,15 +164,14 @@ class Demo(nn.Module):
             info = arcface.load_state_dict(torch.load(ckpt))
             print(info)
 
-            normalize = torchvision.transforms.Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5])
-            fake = torch.tensor(fake).float()
+            fake = torch.tensor(fake).float().permute(2,0,1)
             print(fake.shape)
-            fake = normalize(fake).unsqueeze(0)
-            img_source = normalize(torch.tensor(img_source).float()).unsqueeze(0)
+            fake = fake.unsqueeze(0)
+            img_source = torch.tensor(img_source).float().permute(2,0,1).unsqueeze(0)
             id_fake = arcface(fake)
             id_source = arcface(img_source)
 
-            print(cosine_similarity(id_fake.cpu().numpy(), id_source.cpu().numpy()))
+            print(cosine_similarity(id_fake.numpy(), id_source.numpy()))
 
 
 if __name__ == '__main__':
