@@ -90,12 +90,7 @@ class Demo(nn.Module):
         self.save_path = args.output_folder
         os.makedirs(self.save_path, exist_ok=True)
 
-
-        exp_img = video2imgs(args.s_path)
-
-        img = Image.open(args.s_path)
-
-
+        exp_img = video2imgs(args.s_path)        
         exp = []
         for i in exp_img:
             img = Image.fromarray(cv2.cvtColor(i,cv2.COLOR_BGR2RGB))
