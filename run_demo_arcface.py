@@ -90,14 +90,17 @@ class Demo(nn.Module):
         self.save_path = args.output_folder
         os.makedirs(self.save_path, exist_ok=True)
 
-        exp_img = video2imgs(args.s_path)        
-        exp = []
-        for i in exp_img:
+        # load source video
+        source_video = video2imgs(args.s_path)   
+        # preprocess     
+        source = []
+        for i in source_video:
             img = Image.fromarray(cv2.cvtColor(i,cv2.COLOR_BGR2RGB))
-            exp.append(img_preprocessing(img,256).cuda())
-
-        self.pose_img = random.choice(exp)
-        self.exp_img = random.choice(exp)
+            source.append(img_preprocessing(img,256).cuda())
+        
+        # choose a random frame from source video as source img and expression
+        self.source_img = random.choice(source)
+        self.exp_img = random.choice(source)
 
         self.run()
 
@@ -106,21 +109,21 @@ class Demo(nn.Module):
         output_dir = self.save_path
 
         crop_vi = os.path.join(output_dir, 'edit.mp4')
-        out_edit = cv2.VideoWriter(crop_vi, cv2.VideoWriter_fourcc(*'mp4v'), 25, (256,256))
+        out_fake = cv2.VideoWriter(crop_vi, cv2.VideoWriter_fourcc(*'mp4v'), 25, (256,256))
 
-        crop_vi = os.path.join(output_dir, 's.mp4')
-        out_s = cv2.VideoWriter(crop_vi, cv2.VideoWriter_fourcc(*'mp4v'), 25, (256,256))
+        crop_vi = os.path.join(output_dir, 'source.mp4')
+        out_source = cv2.VideoWriter(crop_vi, cv2.VideoWriter_fourcc(*'mp4v'), 25, (256,256))
 
         crop_vi = os.path.join(output_dir, 'exp.mp4')
         out_exp = cv2.VideoWriter(crop_vi, cv2.VideoWriter_fourcc(*'mp4v'), 25, (256,256))
 
         print('==> running')
         with torch.no_grad():
-            img_exp = self.exp_img
-            img_source = self.pose_img
+            exp_img = self.exp_img
+            source_img = self.source_img
             
             # transfer expression
-            output_dict = self.gen(img_source, img_exp, 'exp')
+            output_dict = self.gen(source_img, exp_img, 'exp')
             fake = output_dict
             fake = fake.cpu().clamp(-1, 1)
 
@@ -129,48 +132,45 @@ class Demo(nn.Module):
             fake = (np.transpose(fake, (0, 2, 3, 1)) + 1) / 2.0 * 255.0
             fake = fake.astype(np.uint8)[0]
             fake = cv2.cvtColor(fake, cv2.COLOR_RGB2BGR)
-            out_edit.write(fake)
+            out_fake.write(fake)
 
-            img_source = img_source[:,:3,:,:].clone().cpu().float().detach().numpy()
-            img_source = (np.transpose(img_source, (0, 2, 3, 1)) + 1) / 2.0 * 255.0
-            img_source = img_source.astype(np.uint8)[0]
-            img_source = cv2.cvtColor(img_source, cv2.COLOR_RGB2BGR)
-            out_s.write(img_source)
+            source_img = source_img[:,:3,:,:].clone().cpu().float().detach().numpy()
+            source_img = (np.transpose(source_img, (0, 2, 3, 1)) + 1) / 2.0 * 255.0
+            source_img = source_img.astype(np.uint8)[0]
+            source_img = cv2.cvtColor(source_img, cv2.COLOR_RGB2BGR)
+            out_source.write(source_img)
 
-            img_exp = img_exp[:,:3,:,:].clone().cpu().float().detach().numpy()
-            img_exp = (np.transpose(img_exp, (0, 2, 3, 1)) + 1) / 2.0 * 255.0
-            img_exp = img_exp.astype(np.uint8)[0]
-            img_exp = cv2.cvtColor(img_exp, cv2.COLOR_RGB2BGR)
-            out_exp.write(img_exp)
+            exp_img = exp_img[:,:3,:,:].clone().cpu().float().detach().numpy()
+            exp_img = (np.transpose(exp_img, (0, 2, 3, 1)) + 1) / 2.0 * 255.0
+            exp_img = exp_img.astype(np.uint8)[0]
+            exp_img = cv2.cvtColor(exp_img, cv2.COLOR_RGB2BGR)
+            out_exp.write(exp_img)
 
-            out_edit.release()
-            out_s.release()
+            out_fake.release()
+            out_source.release()
             out_exp.release()
 
-
+        print("==>evaluating")
         with torch.no_grad():
             ckpt = 'checkpoints/insightface_glint360k.pth'
             arcface = iresnet100().eval()
             info = arcface.load_state_dict(torch.load(ckpt))
             print(info)
 
+            # calculate ids
             fake = torch.tensor(fake).float().permute(2,0,1)
             fake = fake.unsqueeze(0)
-            img_source = torch.tensor(img_source).float().permute(2,0,1).unsqueeze(0)
-            id_fake = arcface(fake, return_id512=True)
-            id_source = arcface(img_source, return_id512=True)
-
+            source_img = torch.tensor(source_img).float().permute(2,0,1).unsqueeze(0)
+            id_fake = arcface(fake)
+            id_source = arcface(source_img)
             print(id_fake.shape)
             print(id_source.shape)
-            
+
+            # compute cosine similarities
             id_fake = np.transpose(id_fake.numpy()[0], (1,0))
             id_source = np.transpose(id_source.numpy()[0], (1,0))
-            
             sims = cosine_similarity(id_fake, id_source)
-
             print(sims.shape)
-
-
 
 
 
