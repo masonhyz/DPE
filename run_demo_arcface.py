@@ -175,10 +175,12 @@ class Demo(nn.Module):
 
             normalize = torchvision.transforms.Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5])
             
-            id_fake = arcface(np.expand_dims(normalize(fake), axis=0))
-            id_source = arcface(np.expand_dims(normalize(img_source), axis=0))
+            fake = normalize(torch.tensor(fake)).unsqueeze(0)
+            img_source = normalize(torch.tensor(img_source)).unsqueeze(0)
+            id_fake = arcface(fake)
+            id_source = arcface(img_source)
 
-            print(cosine_similarity(id_fake, id_source))
+            print(cosine_similarity(id_fake.cpu().numpy(), id_source.cpu().numpy()))
 
             print(id.shape)
 
