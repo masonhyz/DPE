@@ -91,15 +91,10 @@ class Demo(nn.Module):
         os.makedirs(self.save_path, exist_ok=True)
 
 
-        pose_img = video2imgs(args.pose_path)
         exp_img = video2imgs(args.exp_path)
 
         img = Image.open(args.s_path)
 
-        pose = []
-        for i in pose_img:
-            img = Image.fromarray(cv2.cvtColor(i,cv2.COLOR_BGR2RGB))
-            pose.append(img_preprocessing(img,256).cuda())
 
         exp = []
         for i in exp_img:
@@ -167,13 +162,18 @@ class Demo(nn.Module):
             fake = torch.tensor(fake).float().permute(2,0,1)
             fake = fake.unsqueeze(0)
             img_source = torch.tensor(img_source).float().permute(2,0,1).unsqueeze(0)
-            id_fake = arcface(fake)
-            id_source = arcface(img_source)
+            id_fake = arcface(fake, return_id512=True)
+            id_source = arcface(img_source, return_id512=True)
 
             print(id_fake.shape)
             print(id_source.shape)
+            
+            id_fake = np.transpose(id_fake.numpy()[0], (1,0))
+            id_source = np.transpose(id_source.numpy()[0], (1,0))
+            
+            sims = cosine_similarity(id_fake, id_source)
+            print(sims.shape)
 
-            print(cosine_similarity(id_fake.numpy()[0], id_source.numpy()[0]))
 
 
 if __name__ == '__main__':
@@ -183,9 +183,7 @@ if __name__ == '__main__':
     parser.add_argument("--model", type=str, default='')
     parser.add_argument("--latent_dim_style", type=int, default=512)
     parser.add_argument("--latent_dim_motion", type=int, default=20)
-    parser.add_argument("--s_path", type=str, default='./data/crop_video/1.jpg')
-    parser.add_argument("--pose_path", type=str, default='./data/crop_video/4.mp4')
-    parser.add_argument("--exp_path", type=str, default='./data/crop_video/4.mp4')
+    parser.add_argument("--s_path", type=str, default='./data/crop_video/4.mp4')
     parser.add_argument("--face", type=str, default='both')
     parser.add_argument("--model_path", type=str, default='')
     parser.add_argument("--output_folder", type=str, default='')
