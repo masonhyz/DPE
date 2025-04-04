@@ -173,7 +173,7 @@ class Demo(nn.Module):
             print(id_fake.shape)
             print(id_source.shape)
 
-            print(cosine_similarity(id_fake.numpy(), id_source.numpy()))
+            print(cosine_similarity(id_fake.numpy()[0], id_source.numpy()[0]))
 
 
 if __name__ == '__main__':
