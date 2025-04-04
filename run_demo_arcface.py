@@ -165,11 +165,13 @@ class Demo(nn.Module):
             print(info)
 
             fake = torch.tensor(fake).float().permute(2,0,1)
-            print(fake.shape)
             fake = fake.unsqueeze(0)
             img_source = torch.tensor(img_source).float().permute(2,0,1).unsqueeze(0)
             id_fake = arcface(fake)
             id_source = arcface(img_source)
+
+            print(id_fake.shape)
+            print(id_source.shape)
 
             print(cosine_similarity(id_fake.numpy(), id_source.numpy()))
 
