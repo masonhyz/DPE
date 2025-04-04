@@ -169,9 +169,9 @@ class Demo(nn.Module):
             # compute cosine similarities
             id_fake = np.transpose(id_fake.numpy()[0], (1,0))
             id_source = np.transpose(id_source.numpy()[0], (1,0))
-            sims = cosine_similarity(id_fake, id_source)
-            print(sims.shape)
-
+            cos_sim_matrix = cosine_similarity(id_fake, id_source)
+            cos_sim_scalar = np.mean(np.diag(cos_sim_matrix))
+            print(cos_sim_scalar)
 
 
 if __name__ == '__main__':
