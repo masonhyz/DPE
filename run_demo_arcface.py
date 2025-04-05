@@ -13,7 +13,7 @@ import random
 from insightface_backbone_conv import iresnet100
 from sklearn.metrics.pairwise import cosine_similarity
 import matplotlib.pyplot as plt
-import tqdm
+from tqdm import tqdm
 
 
 def load_image(filename, size):
