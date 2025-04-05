@@ -207,4 +207,4 @@ if __name__ == '__main__':
 
     # demo
     demo = Demo(args)
-    demo.run_batch(10)
+    demo.run_batch()
