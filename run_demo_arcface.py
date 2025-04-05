@@ -121,6 +121,9 @@ class Demo(nn.Module):
         with torch.no_grad():
             exp_img = self.exp_img
             source_img = self.source_img
+
+            # get expression latents, make sure they differ a lot
+            cos_sim = self.gen.compare_expression_latents(source_img, exp_img)
             
             # transfer expression
             output_dict = self.gen(source_img, exp_img, 'exp')

@@ -4,6 +4,7 @@ from .styledecoder import Synthesis
 import torch
 import math
 from torch.nn import functional as F
+from sklearn.metrics.pairwise import cosine_similarity
 
 
 class Direction(nn.Module):
@@ -84,6 +85,19 @@ class Generator(nn.Module):
         for i in range(2):
             fc.append(EqualLinear(style_dim, style_dim))
         self.mlp_exp = nn.Sequential(*fc)
+
+    def compare_expression_latents(self, img_source, img_drive):
+        wa, wa_t, feats, feats_t = self.enc(img_source, img_drive, h_start)
+        alpha_D = self.mlp(wa_t)
+        directions_D = self.dir(alpha_D)
+        alpha_S = self.mlp(wa)
+        directions_S = self.dir(alpha_S)
+        directions_expD = self.mlp_exp(directions_D)
+        directions_expS = self.mlp_exp(directions_S)
+        print(directions_expD.shape, directions_expS.shape)
+        cos_sim = cosine_similarity(directions_expD.numpy(), directions_expS.numpy())
+        print("cos sim:", cos_sim)
+        return cos_sim
 
     def forward(self, img_source, img_drive,stage='train'):
         if stage == 'train':
