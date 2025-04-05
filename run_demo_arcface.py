@@ -131,19 +131,19 @@ class Demo(nn.Module):
             fake = fake[:,:3,:,:].clone().cpu().float().detach().numpy()
             fake = (np.transpose(fake, (0, 2, 3, 1)) + 1) / 2.0 * 255.0
             fake = fake.astype(np.uint8)[0]
-            fake = cv2.cvtColor(fake, cv2.COLOR_RGB2BGR)
+            # fake = cv2.cvtColor(fake, cv2.COLOR_RGB2BGR)
             # out_fake.write(fake)
 
             source_img = source_img[:,:3,:,:].clone().cpu().float().detach().numpy()
             source_img = (np.transpose(source_img, (0, 2, 3, 1)) + 1) / 2.0 * 255.0
             source_img = source_img.astype(np.uint8)[0]
-            source_img = cv2.cvtColor(source_img, cv2.COLOR_RGB2BGR)
+            # source_img = cv2.cvtColor(source_img, cv2.COLOR_RGB2BGR)
             # out_source.write(source_img)
 
             exp_img = exp_img[:,:3,:,:].clone().cpu().float().detach().numpy()
             exp_img = (np.transpose(exp_img, (0, 2, 3, 1)) + 1) / 2.0 * 255.0
             exp_img = exp_img.astype(np.uint8)[0]
-            exp_img = cv2.cvtColor(exp_img, cv2.COLOR_RGB2BGR)
+            # exp_img = cv2.cvtColor(exp_img, cv2.COLOR_RGB2BGR)
             # out_exp.write(exp_img)
 
             # out_fake.release()
