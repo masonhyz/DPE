@@ -97,7 +97,7 @@ class Generator(nn.Module):
         print(directions_expD.shape, directions_expS.shape)
         cos_sim = cosine_similarity(directions_expD.cpu().numpy(), directions_expS.cpu().numpy())
         print("cos sim:", cos_sim)
-        return cos_sim
+        return cos_sim.item()
 
     def forward(self, img_source, img_drive,stage='train'):
         if stage == 'train':
