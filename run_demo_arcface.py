@@ -129,7 +129,7 @@ class Demo(nn.Module):
             #     return None, None, None, None
             
             # transfer expression
-            output_dict = self.gen(source_img, exp_img, 'exp')
+            output_dict = self.gen(source_img, exp_img, 'train')
             fake = output_dict
             fake = fake.cpu().clamp(-1, 1)
 
@@ -207,7 +207,6 @@ if __name__ == '__main__':
     parser.add_argument("--latent_dim_style", type=int, default=512)
     parser.add_argument("--latent_dim_motion", type=int, default=20)
     parser.add_argument("--s_path", type=str, default='./data/crop_video/4.mp4')
-    parser.add_argument("--face", type=str, default='both')
     parser.add_argument("--model_path", type=str, default='')
     parser.add_argument("--output_folder", type=str, default='')
     parser.add_argument("--n_samples", type=int, default=10)
