@@ -101,7 +101,7 @@ class Demo(nn.Module):
             self.source.append(img_preprocessing(img,256).cuda())
 
 
-    def run(self):
+    def run(self, i):
         # choose a random frame from source video as source img and expression
         self.source_img = random.choice(self.source)
         self.exp_img = random.choice(self.source)
@@ -123,10 +123,26 @@ class Demo(nn.Module):
             source_img = self.source_img
 
             # get expression latents, make sure they differ a lot
-            # cos_sim = self.gen.compare_expression_latents(source_img, exp_img)
-            # if cos_sim > 0.7:
-            #     print("ignored frame pairs with similar expressions")
-            #     return None, None, None, None
+            cos_sim_scalar = self.gen.compare_expression_latents(source_img, exp_img)
+            if True:
+                # print("ignored frame pairs with similar expressions")
+                # return None, None, None, None
+
+                fig, axes = plt.subplots(1, 2, figsize=(8, 4))
+                fig.suptitle(f"Cosine Similarity: {cos_sim_scalar:.4f}", fontsize=16)
+                titles = ["Source Image", "Expression Image"]
+                images = [source_img, exp_img]
+
+                for ax, img, title in zip(axes, images, titles):
+                    ax.imshow(img)
+                    ax.set_title(title)
+                    ax.axis("off")
+
+                plt.tight_layout()
+                plt.subplots_adjust(top=0.85)  # leave space for suptitle
+                plt.savefig(os.path.join(self.save_path, f"comparison_{i}.png"))
+                plt.close()
+                return 
             
             # transfer expression
             output_dict = self.gen(source_img, exp_img, 'exp')
@@ -197,6 +213,10 @@ class Demo(nn.Module):
             plt.subplots_adjust(top=0.85)  # leave space for suptitle
             plt.savefig(os.path.join(self.save_path, f"comparison_{i}.png"))
             plt.close()
+
+    def run_batch(self):
+        for i in tqdm(range(args.n_samples)):
+            self.run(i)
 
 
 if __name__ == '__main__':
