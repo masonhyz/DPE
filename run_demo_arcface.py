@@ -131,6 +131,12 @@ class Demo(nn.Module):
                 fig, axes = plt.subplots(1, 2, figsize=(8, 4))
                 fig.suptitle(f"Cosine Similarity: {cos_sim_scalar:.4f}", fontsize=16)
                 titles = ["Source Image", "Expression Image"]
+                source_img = source_img[:,:3,:,:].clone().cpu().float().detach().numpy()
+                source_img = (np.transpose(source_img, (0, 2, 3, 1)) + 1) / 2.0 * 255.0
+                source_img = source_img.astype(np.uint8)[0]
+                exp_img = exp_img[:,:3,:,:].clone().cpu().float().detach().numpy()
+                exp_img = (np.transpose(exp_img, (0, 2, 3, 1)) + 1) / 2.0 * 255.0
+                exp_img = exp_img.astype(np.uint8)[0]
                 images = [source_img, exp_img]
 
                 for ax, img, title in zip(axes, images, titles):
