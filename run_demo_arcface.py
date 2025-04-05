@@ -234,4 +234,4 @@ if __name__ == '__main__':
 
     # demo
     demo = Demo(args)
-    demo.plot_batch()
+    demo.run_batch()
