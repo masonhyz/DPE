@@ -168,7 +168,7 @@ class Demo(nn.Module):
             cos_sim_scalar = np.mean(np.diag(cos_sim_matrix))
             print(cos_sim_scalar)
         
-        return np.transpose(source_img, (2, 0, 1)), np.transpose(exp_img, (2, 0, 1)), np.transpose(fake, (2, 0, 1)), cos_sim_scalar
+        return source_img, exp_img, fake, cos_sim_scalar
 
     def run_batch(self, n):
         for i in tqdm(range(n)):
