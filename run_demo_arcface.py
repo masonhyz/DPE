@@ -170,8 +170,8 @@ class Demo(nn.Module):
         
         return source_img, exp_img, fake, cos_sim_scalar
 
-    def run_batch(self, n):
-        for i in tqdm(range(n)):
+    def run_batch(self):
+        for i in tqdm(range(self.args.n_samples)):
             source_img, exp_img, fake_img, cos_sim_scalar = self.run()
 
             fig, axes = plt.subplots(1, 3, figsize=(12, 4))
@@ -202,6 +202,7 @@ if __name__ == '__main__':
     parser.add_argument("--face", type=str, default='both')
     parser.add_argument("--model_path", type=str, default='')
     parser.add_argument("--output_folder", type=str, default='')
+    parser.add_argument("--n_samples", type=int, default=10)
     args = parser.parse_args()
 
     # demo
