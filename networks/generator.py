@@ -87,7 +87,7 @@ class Generator(nn.Module):
         self.mlp_exp = nn.Sequential(*fc)
 
     def compare_expression_latents(self, img_source, img_drive):
-        wa, wa_t, feats, feats_t = self.enc(img_source, img_drive, h_start)
+        wa, wa_t, feats, feats_t = self.enc(img_source, img_drive)
         alpha_D = self.mlp(wa_t)
         directions_D = self.dir(alpha_D)
         alpha_S = self.mlp(wa)
