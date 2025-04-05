@@ -129,7 +129,7 @@ class Demo(nn.Module):
             #     return None, None, None, None
             
             # transfer expression
-            output_dict = self.gen(source_img, exp_img, 'train')
+            output_dict = self.gen(source_img, exp_img, 'exp')
             fake = output_dict
             fake = fake.cpu().clamp(-1, 1)
 
