@@ -123,7 +123,10 @@ class Demo(nn.Module):
             source_img = self.source_img
 
             # get expression latents, make sure they differ a lot
-            cos_sim = self.gen.compare_expression_latents(source_img, exp_img)
+            # cos_sim = self.gen.compare_expression_latents(source_img, exp_img)
+            # if cos_sim > 0.7:
+            #     print("ignored frame pairs with similar expressions")
+            #     return None, None, None, None
             
             # transfer expression
             output_dict = self.gen(source_img, exp_img, 'exp')
@@ -173,9 +176,11 @@ class Demo(nn.Module):
         
         return source_img, exp_img, fake, cos_sim_scalar
 
-    def run_batch(self):
+    def plot_batch(self):
         for i in tqdm(range(self.args.n_samples)):
             source_img, exp_img, fake_img, cos_sim_scalar = self.run()
+            if not source_img:
+                continue
 
             fig, axes = plt.subplots(1, 3, figsize=(12, 4))
             fig.suptitle(f"Cosine Similarity: {cos_sim_scalar:.4f}", fontsize=16)
@@ -210,4 +215,4 @@ if __name__ == '__main__':
 
     # demo
     demo = Demo(args)
-    demo.run_batch()
+    demo.plot_batch()
