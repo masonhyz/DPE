@@ -101,6 +101,11 @@ class Demo(nn.Module):
             img = Image.fromarray(cv2.cvtColor(i,cv2.COLOR_BGR2RGB))
             self.source.append(img_preprocessing(img,256).cuda())
 
+        ckpt = 'checkpoints/insightface_glint360k.pth'
+        self.arcface = iresnet100().eval()
+        info = self.arcface.load_state_dict(torch.load(ckpt))
+        print(info)
+
 
     def run(self):
         # choose a random frame from source video as source img and expression
@@ -161,21 +166,16 @@ class Demo(nn.Module):
 
         print("==> evaluating")
         with torch.no_grad():
-            ckpt = 'checkpoints/insightface_glint360k.pth'
-            arcface = iresnet100().eval()
-            info = arcface.load_state_dict(torch.load(ckpt))
-            print(info)
-
             # calculate ids
-            id_fake = arcface(torch.tensor(fake).float().permute(2,0,1).unsqueeze(0))
-            id_source = arcface(torch.tensor(source_img).float().permute(2,0,1).unsqueeze(0))
+            id_fake = self.arcface(torch.tensor(fake).float().permute(2,0,1).unsqueeze(0))
+            id_source = self.arcface(torch.tensor(source_img).float().permute(2,0,1).unsqueeze(0))
 
             # compute cosine similarities
             id_fake = np.transpose(id_fake.numpy()[0], (1,0))
             id_source = np.transpose(id_source.numpy()[0], (1,0))
             cos_sim_matrix = cosine_similarity(id_fake, id_source)
             cos_sim = np.mean(np.diag(cos_sim_matrix))
-            print(cos_sim)
+            # print(cos_sim)
         
         return source_img, exp_img, fake, cos_sim, exp_sim
 
