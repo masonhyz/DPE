@@ -213,7 +213,7 @@ class Demo(nn.Module):
             'Count': [np.count_nonzero(~np.isnan(exp_sim_list)), np.count_nonzero(~np.isnan(cos_sim_list))]
         }
         df = pd.DataFrame(summary, index=["Expression Similarities", "Identity Similarities"])
-        print(df.round(4).to_markdown())
+        print(df.round(4).to_string())
 
     # def run_batch(self):
     #     for i in tqdm(range(args.n_samples)):
