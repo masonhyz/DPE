@@ -186,7 +186,7 @@ class Demo(nn.Module):
             source_img, exp_img, fake_img, cos_sim, exp_sim = self.run()
             cos_sim_list.append(cos_sim)
             exp_sim_list.append(exp_sim)
-            if not source_img: 
+            if not cos_sim: 
                 continue
 
             fig, axes = plt.subplots(1, 3, figsize=(12, 4))
