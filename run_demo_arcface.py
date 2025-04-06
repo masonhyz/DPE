@@ -8,7 +8,6 @@ import torch
 import torch.nn as nn
 from networks.generator import Generator
 import numpy as np
-import torchvision
 import random
 from insightface_backbone_conv import iresnet100
 from sklearn.metrics.pairwise import cosine_similarity
@@ -16,14 +15,6 @@ import matplotlib.pyplot as plt
 from tqdm import tqdm
 import pandas as pd
 
-
-def load_image(filename, size):
-    img = Image.open(filename).convert('RGB')
-    img = img.resize((size, size))
-    img = np.asarray(img)
-    img = np.transpose(img, (2, 0, 1))  # 3 x 256 x 256
-
-    return img / 255.0
 
 def load_image1(filename, size):
     img = filename.convert('RGB')
@@ -41,30 +32,9 @@ def img_preprocessing(img_path, size):
     return imgs_norm
 
 
-def vid_preprocessing(vid_path):
-    vid_dict = torchvision.io.read_video(vid_path, pts_unit='sec')
-    vid = vid_dict[0].permute(0, 3, 1, 2).unsqueeze(0)
-    fps = vid_dict[2]['video_fps']
-    vid_norm = (vid / 255.0 - 0.5) * 2.0  # [-1, 1]
-
-    return vid_norm, fps
-
-
-def save_video(vid_target_recon, save_path, fps):
-    vid = vid_target_recon.permute(0, 2, 3, 4, 1)
-    vid = vid.clamp(-1, 1).cpu()
-    vid = ((vid - vid.min()) / (vid.max() - vid.min()) * 255).type('torch.ByteTensor')
-
-    torchvision.io.write_video(save_path, vid[0], fps=fps)
-
-
 def video2imgs(videoPath):
     cap = cv2.VideoCapture(videoPath)    
-    judge = cap.isOpened()                
-    fps = cap.get(cv2.CAP_PROP_FPS)     
-
-    frames = 1                           
-    count = 1                           
+    judge = cap.isOpened()               
     img = []
     while judge:
         flag, frame = cap.read()         
