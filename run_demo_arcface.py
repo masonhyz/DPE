@@ -139,7 +139,7 @@ class Demo(nn.Module):
 
             if exp_sim > 0.97:
                 print(f"Ignored frame pairs with exp sim {exp_sim:.4f}")
-                return None, None, None, None, exp_sim
+                return None, None, None, np.nan, exp_sim
             
             # transfer expression
             output_dict = self.gen(source_img, exp_img, 'exp')
@@ -186,7 +186,7 @@ class Demo(nn.Module):
             source_img, exp_img, fake_img, cos_sim, exp_sim = self.run()
             cos_sim_list.append(cos_sim)
             exp_sim_list.append(exp_sim)
-            if not cos_sim: 
+            if np.isnan(cos_sim): 
                 continue
 
             fig, axes = plt.subplots(1, 3, figsize=(12, 4))
