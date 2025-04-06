@@ -137,7 +137,7 @@ class Demo(nn.Module):
             #     plt.close()
             #     return 
 
-            if exp_sim > 0:
+            if exp_sim > 0.97:
                 print(f"Ignored frame pairs with exp sim {exp_sim:.4f}")
                 return None, None, None, np.nan, exp_sim
             
@@ -199,7 +199,7 @@ class Demo(nn.Module):
 
             plt.tight_layout()
             plt.subplots_adjust(top=0.90, bottom=0.10) 
-            fig.text(0.5, 0.05, f"Identity Similarity: {cos_sim:.4f}, Expression Similarity: {exp_sim:.4f}", 
+            fig.text(0.5, 0.03, f"Identity Similarity: {cos_sim:.4f}, Expression Similarity: {exp_sim:.4f}", 
                     ha='center', fontsize=14, color='gray')
             plt.savefig(os.path.join(self.save_path, f"comparison_{i}.png"))
             plt.close()
