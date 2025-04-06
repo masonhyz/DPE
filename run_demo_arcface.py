@@ -137,7 +137,7 @@ class Demo(nn.Module):
             #     plt.close()
             #     return 
 
-            if exp_sim > 0.97:
+            if exp_sim > 0:
                 print(f"Ignored frame pairs with exp sim {exp_sim:.4f}")
                 return None, None, None, np.nan, exp_sim
             
