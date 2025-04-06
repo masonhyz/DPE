@@ -205,11 +205,11 @@ class Demo(nn.Module):
             plt.close()
 
         summary = {
-            'Mean': [np.mean(exp_sim_list), np.mean(cos_sim_list)],
-            'Median': [np.median(exp_sim_list), np.median(cos_sim_list)],
-            'Std Dev': [np.std(exp_sim_list), np.std(cos_sim_list)],
-            'Max': [np.max(exp_sim_list), np.max(cos_sim_list)],
-            'Min': [np.min(exp_sim_list), np.min(cos_sim_list)],
+            'Mean': [np.nanmean(exp_sim_list), np.nanmean(cos_sim_list)],
+            'Median': [np.nanmedian(exp_sim_list), np.nanmedian(cos_sim_list)],
+            'Std Dev': [np.nanstd(exp_sim_list), np.nanstd(cos_sim_list)],
+            'Max': [np.nanmax(exp_sim_list), np.nanmax(cos_sim_list)],
+            'Min': [np.nanmin(exp_sim_list), np.nanmin(cos_sim_list)],
             'Count': [np.sum(~np.isnan(exp_sim_list)), np.sum(~np.isnan(cos_sim_list))]
         }
         df = pd.DataFrame(summary, index=["Expression Similarities", "Identity Similarities"])
