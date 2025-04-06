@@ -210,7 +210,7 @@ class Demo(nn.Module):
             'Std Dev': [np.nanstd(exp_sim_list), np.nanstd(cos_sim_list)],
             'Max': [np.nanmax(exp_sim_list), np.nanmax(cos_sim_list)],
             'Min': [np.nanmin(exp_sim_list), np.nanmin(cos_sim_list)],
-            'Count': [np.sum(~np.isnan(exp_sim_list)), np.sum(~np.isnan(cos_sim_list))]
+            'Count': [np.count_nonzero(~np.isnan(exp_sim_list)), np.count_nonzero(~np.isnan(cos_sim_list))]
         }
         df = pd.DataFrame(summary, index=["Expression Similarities", "Identity Similarities"])
         print(df.round(4).to_markdown())
