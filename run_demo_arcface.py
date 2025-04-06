@@ -198,9 +198,9 @@ class Demo(nn.Module):
                 ax.axis("off")
 
             plt.tight_layout()
-            # plt.subplots_adjust(top=0.80)
+            plt.subplots_adjust(top=0.85, bottom=0.15) 
             fig.text(0.5, 0.02, f"Identity Similarity: {cos_sim:.4f}, Expression Similarity: {exp_sim:.4f}", 
-                    ha='center', fontsize=10, color='gray')
+                    ha='center', fontsize=14, color='gray')
             plt.savefig(os.path.join(self.save_path, f"comparison_{i}.png"))
             plt.close()
 
