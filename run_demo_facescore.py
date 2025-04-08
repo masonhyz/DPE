@@ -72,10 +72,10 @@ class Demo(nn.Module):
             img = Image.fromarray(cv2.cvtColor(i,cv2.COLOR_BGR2RGB))
             self.source.append(img_preprocessing(img,256).cuda())
 
-        ckpt = 'checkpoints/insightface_glint360k.pth'
-        self.arcface = iresnet100().eval()
-        info = self.arcface.load_state_dict(torch.load(ckpt))
-        print(info)
+        # ckpt = 'checkpoints/insightface_glint360k.pth'
+        # self.arcface = iresnet100().eval()
+        # info = self.arcface.load_state_dict(torch.load(ckpt))
+        # print(info)
 
 
     def run(self):
@@ -118,8 +118,8 @@ class Demo(nn.Module):
             face_score_model = FaceScore('FS_model.pt', med_config='med_config.json')
             # You can load the model locally
             # face_score_model = FaceScore(path_to_checkpoint,med_config = path_to_config)
-            face_score,box,confidences = face_score_model.get_reward_from_img(fake)
-            print(f'The face score is {face_score}, and the bounding box of the faces is {box}')
+            face_score, _, __ = face_score_model.get_reward_from_img(fake)
+            print(f'The face score is {face_score}')
         return source_img, exp_img, fake, face_score, exp_sim
 
     def run_batch(self):
@@ -142,7 +142,7 @@ class Demo(nn.Module):
 
             plt.tight_layout()
             plt.subplots_adjust(top=0.90, bottom=0.10) 
-            fig.text(0.5, 0.03, f"Identity Similarity: {fs:.4f}, Expression Similarity: {exp_sim:.4f}", 
+            fig.text(0.5, 0.03, f"Expression Similarity: {exp_sim:.4f}, Generated FaceScore: {fs:.4f}", 
                     ha='center', fontsize=14, color='gray')
             plt.savefig(os.path.join(self.save_path, f"comparison_{i}.png"))
             plt.close()
