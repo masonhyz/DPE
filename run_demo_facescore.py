@@ -57,6 +57,8 @@ class Demo(nn.Module):
         self.gen.load_state_dict(weight)
         self.gen.eval()
 
+        self.face_score_model = FaceScore('checkpoints/FS_model.pt', med_config='checkpoints/med_config.json')
+
         print('==> loading data')
         self.save_path = args.output_folder
         os.makedirs(self.save_path, exist_ok=True)
@@ -69,8 +71,6 @@ class Demo(nn.Module):
             img = Image.fromarray(cv2.cvtColor(i,cv2.COLOR_BGR2RGB))
             self.source.append(img_preprocessing(img,256).cuda())
             
-        self.face_score_model = FaceScore('FS_model.pt', med_config='med_config.json')
-
     def run(self):
         # choose a random frame from source video as source img and expression
         self.source_img = random.choice(self.source)
