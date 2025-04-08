@@ -2,15 +2,12 @@
 import os
 import cv2 
 import argparse
-import numpy as np
 from PIL import Image
 import torch
 import torch.nn as nn
 from networks.generator import Generator
 import numpy as np
 import random
-from insightface_backbone_conv import iresnet100
-from sklearn.metrics.pairwise import cosine_similarity
 import matplotlib.pyplot as plt
 from tqdm import tqdm
 import pandas as pd
@@ -71,12 +68,8 @@ class Demo(nn.Module):
         for i in source_video:
             img = Image.fromarray(cv2.cvtColor(i,cv2.COLOR_BGR2RGB))
             self.source.append(img_preprocessing(img,256).cuda())
-
-        # ckpt = 'checkpoints/insightface_glint360k.pth'
-        # self.arcface = iresnet100().eval()
-        # info = self.arcface.load_state_dict(torch.load(ckpt))
-        # print(info)
-
+            
+        self.face_score_model = FaceScore('FS_model.pt', med_config='med_config.json')
 
     def run(self):
         # choose a random frame from source video as source img and expression
@@ -115,10 +108,7 @@ class Demo(nn.Module):
 
         print("==> evaluating")
         with torch.no_grad():
-            face_score_model = FaceScore('FS_model.pt', med_config='med_config.json')
-            # You can load the model locally
-            # face_score_model = FaceScore(path_to_checkpoint,med_config = path_to_config)
-            face_score, _, __ = face_score_model.get_reward_from_img(fake)
+            face_score, _, __ = self.face_score_model.get_reward_from_img(fake)
             print(f'The face score is {face_score}')
         return source_img, exp_img, fake, face_score, exp_sim
 
@@ -155,7 +145,7 @@ class Demo(nn.Module):
             'Min': [np.nanmin(exp_sim_list), np.nanmin(fs_list)],
             'Count': [np.count_nonzero(~np.isnan(exp_sim_list)), np.count_nonzero(~np.isnan(fs_list))]
         }
-        df = pd.DataFrame(summary, index=["Expression Similarities", "Identity Similarities"])
+        df = pd.DataFrame(summary, index=["Expression Similarities", "FaceScore"])
         print(df.round(4).to_string())
 
 
