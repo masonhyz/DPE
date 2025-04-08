@@ -115,7 +115,7 @@ class Demo(nn.Module):
 
         print("==> evaluating")
         with torch.no_grad():
-            face_score_model = FaceScore('FaceScore')
+            face_score_model = FaceScore('FS_model.pt', med_config='med_config.json')
             # You can load the model locally
             # face_score_model = FaceScore(path_to_checkpoint,med_config = path_to_config)
             face_score,box,confidences = face_score_model.get_reward_from_img(fake)
