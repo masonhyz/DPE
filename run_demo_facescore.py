@@ -3,6 +3,7 @@ import os
 import cv2 
 import argparse
 from PIL import Image
+from insightface_backbone_conv import iresnet100
 import torch
 import torch.nn as nn
 from networks.generator import Generator
@@ -12,6 +13,7 @@ import matplotlib.pyplot as plt
 from tqdm import tqdm
 import pandas as pd
 from FaceScore.FaceScore import FaceScore
+from sklearn.metrics.pairwise import cosine_similarity
 
 
 def load_image1(filename, size):
@@ -44,51 +46,11 @@ def video2imgs(videoPath):
 
     return img
 
-# def video2imgs(videoPath, face_score_model, output_size=256):
-#     cap = cv2.VideoCapture(videoPath)    
-#     img_list = []
 
-
-#     while cap.isOpened():
-#         ret, frame = cap.read()
-#         if not ret:
-#             break
-
-#         # Detect face box
-#         _, box, confidence = face_score_model.get_reward_from_img(frame)
-#         print(confidence)
-
-#         if box is not None:
-#             x1, y1, x2, y2 = map(int, box[0])  # box[0] is a list
-#             # Expand the box slightly and make it square
-#             w, h = x2 - x1, y2 - y1
-#             size = max(w, h)
-#             cx, cy = x1 + w // 2, y1 + h // 2
-#             x1_new = max(cx - size // 2, 0)
-#             y1_new = max(cy - size // 2, 0)
-#             x2_new = x1_new + size
-#             y2_new = y1_new + size
-
-#             # Ensure within bounds
-#             h_frame, w_frame, _ = frame.shape
-#             x2_new = min(x2_new, w_frame)
-#             y2_new = min(y2_new, h_frame)
-#             x1_new = max(x2_new - size, 0)
-#             y1_new = max(y2_new - size, 0)
-
-#             face_crop = frame[y1_new:y2_new, x1_new:x2_new]
-
-#             # Resize to desired square size (e.g., 256x256)
-#             face_crop = cv2.resize(face_crop, (output_size, output_size))
-#             img_list.append(face_crop)
-
-#     cap.release()
-#     return img_list
-
-
-def crop_img(face_score_model, frame, output_size=256, scale=1.5):
+def crop_and_preprocess(face_score_model, frame, output_size=256, scale=1.5):
     _, box, confidence = face_score_model.get_reward_from_img(frame)
-    print(confidence)
+    if confidence[0] < 0.9:
+        print("Confidence < 0.9")
 
     x1, y1, x2, y2 = map(int, box[0])  # assuming box[0] is the correct bbox
     w, h = x2 - x1, y2 - y1
@@ -113,6 +75,9 @@ def crop_img(face_score_model, frame, output_size=256, scale=1.5):
 
     face_crop = frame[y1_new:y2_new, x1_new:x2_new]
     face_crop = cv2.resize(face_crop, (output_size, output_size))
+
+    face_crop = Image.fromarray(cv2.cvtColor(face_crop, cv2.COLOR_BGR2RGB))
+    face_crop = img_preprocessing(face_crop, 256).cuda()
     return face_crop
 
 
@@ -129,29 +94,23 @@ class Demo(nn.Module):
         self.gen.load_state_dict(weight)
         self.gen.eval()
 
+        # load facescore model
         self.face_score_model = FaceScore('checkpoints/FS_model.pt', med_config='checkpoints/med_config.json')
+        # load arcface model
+        ckpt = 'checkpoints/insightface_glint360k.pth'
+        self.arcface = iresnet100().eval()
+        info = self.arcface.load_state_dict(torch.load(ckpt))
+        print(info)
 
         print('==> loading data')
         self.save_path = args.output_folder
         os.makedirs(self.save_path, exist_ok=True)
-
-        # # load source video
-        # source_video = video2imgs(args.s_path)
-
-        # load source video 
         self.source = video2imgs(args.s_path)
-        # for i in source_video:
-        #     img = Image.fromarray(cv2.cvtColor(i,cv2.COLOR_BGR2RGB))
-        #     self.source.append(img_preprocessing(img,256).cuda())
-            
+        
     def run(self):
-        # choose a random frame from source video as source img and expression
-        self.source_img = crop_img(self.face_score_model, random.choice(self.source))
-        self.source_img = Image.fromarray(cv2.cvtColor(self.source_img, cv2.COLOR_BGR2RGB))
-        self.source_img = img_preprocessing(self.source_img,256).cuda()
-        self.exp_img = crop_img(self.face_score_model, random.choice(self.source))
-        self.exp_img = Image.fromarray(cv2.cvtColor(self.exp_img, cv2.COLOR_BGR2RGB))
-        self.exp_img = img_preprocessing(self.exp_img,256).cuda()
+        # choose and preprocess random frame pair
+        self.source_img = crop_and_preprocess(self.face_score_model, random.choice(self.source))
+        self.exp_img = crop_and_preprocess(self.face_score_model, random.choice(self.source))
 
         print('==> running')
         with torch.no_grad():
@@ -163,7 +122,13 @@ class Demo(nn.Module):
 
             if exp_sim > self.args.exp_threshold:
                 print(f"Ignored frame pairs with exp sim {exp_sim:.4f}")
-                return None, None, None, np.nan, exp_sim
+                return {"source": None,
+                        "driving": None, 
+                        "fake": None, 
+                        "face_score": np.nan, 
+                        "cos_sim": np.nan, 
+                        "exp_sim": exp_sim
+                }
             
             # transfer expression
             output_dict = self.gen(source_img, exp_img, 'exp')
@@ -184,24 +149,49 @@ class Demo(nn.Module):
             exp_img = exp_img.astype(np.uint8)[0]
 
         print("==> evaluating")
+
         with torch.no_grad():
-            face_score, _, __ = self.face_score_model.get_reward_from_img(fake)
-            print(f'The face score is {face_score}')
-        return source_img, exp_img, fake, face_score, exp_sim
+            face_score = np.nan
+            cos_sim = np.nan
+            if self.args.eval in ["facescore", "both"]:
+                # face score evaluation
+                face_score, _, __ = self.face_score_model.get_reward_from_img(fake)
+                print(f'The face score is {face_score}')
+            if self.args.eval in ["arcface", "both"]:
+                # arcface evaluation
+                # calculate ids
+                id_fake = self.arcface(torch.tensor(fake).float().permute(2,0,1).unsqueeze(0))
+                id_source = self.arcface(torch.tensor(source_img).float().permute(2,0,1).unsqueeze(0))
+
+                # compute cosine similarities
+                id_fake = np.transpose(id_fake.numpy()[0], (1,0))
+                id_source = np.transpose(id_source.numpy()[0], (1,0))
+                cos_sim_matrix = cosine_similarity(id_fake, id_source)
+                cos_sim = np.mean(np.diag(cos_sim_matrix))
+
+        return {"source": source_img,
+                "driving": exp_img, 
+                "fake": fake, 
+                "face_score": face_score, 
+                "cos_sim": cos_sim, 
+                "exp_sim": exp_sim
+        }
 
     def run_batch(self):
         exp_sim_list = []
         fs_list = []
+        cos_sim_list = []
         for i in tqdm(range(self.args.n_samples)):
-            source_img, exp_img, fake_img, fs, exp_sim = self.run()
-            fs_list.append(fs)
-            exp_sim_list.append(exp_sim)
-            if np.isnan(fs): 
+            res = self.run()
+            fs_list.append(res["face_score"])
+            exp_sim_list.append(res["exp_sim"])
+            cos_sim_list.append(res["cos_sim"])
+            if np.isnan(res["face_score"]): 
                 continue
 
             fig, axes = plt.subplots(1, 3, figsize=(12, 4))
             titles = ["Source Image", "Expression Image", "Generated Image"]
-            images = [source_img, exp_img, fake_img]
+            images = [res["source"], res["driving"], res["fake"]]
             for ax, img, title in zip(axes, images, titles):
                 ax.imshow(img)
                 ax.set_title(title)
@@ -209,20 +199,20 @@ class Demo(nn.Module):
 
             plt.tight_layout()
             plt.subplots_adjust(top=0.90, bottom=0.10) 
-            fig.text(0.5, 0.03, f"Expression Similarity: {exp_sim:.4f}, Generated FaceScore: {fs:.4f}", 
+            fig.text(0.5, 0.03, f"Expression Similarity: {res["exp_sim"]:.4f}, Generated FaceScore: {res["face_score"]:.4f}, Identity Similarity: {res["cos_sim"]:.4f}", 
                     ha='center', fontsize=14, color='gray')
             plt.savefig(os.path.join(self.save_path, f"comparison_{i}.png"))
             plt.close()
 
         summary = {
-            'Mean': [np.nanmean(exp_sim_list), np.nanmean(fs_list)],
-            'Median': [np.nanmedian(exp_sim_list), np.nanmedian(fs_list)],
-            'Std Dev': [np.nanstd(exp_sim_list), np.nanstd(fs_list)],
-            'Max': [np.nanmax(exp_sim_list), np.nanmax(fs_list)],
-            'Min': [np.nanmin(exp_sim_list), np.nanmin(fs_list)],
-            'Count': [np.count_nonzero(~np.isnan(exp_sim_list)), np.count_nonzero(~np.isnan(fs_list))]
+            'Mean': [np.nanmean(exp_sim_list), np.nanmean(fs_list), np.nanmean(cos_sim_list)],
+            'Median': [np.nanmedian(exp_sim_list), np.nanmedian(fs_list), np.nanmedian(cos_sim_list)],
+            'Std Dev': [np.nanstd(exp_sim_list), np.nanstd(fs_list), np.nanstd(cos_sim_list)],
+            'Max': [np.nanmax(exp_sim_list), np.nanmax(fs_list), np.nanmax(cos_sim_list)],
+            'Min': [np.nanmin(exp_sim_list), np.nanmin(fs_list), np.nanmin(cos_sim_list)],
+            'Count': [np.count_nonzero(~np.isnan(exp_sim_list)), np.count_nonzero(~np.isnan(fs_list)), np.count_nonzero(~np.isnan(cos_sim_list))]
         }
-        df = pd.DataFrame(summary, index=["Expression Similarities", "FaceScore"])
+        df = pd.DataFrame(summary, index=["Expression Similarities", "FaceScore", "Identity Similarity"])
         print(df.round(4).to_string())
 
 
