@@ -58,7 +58,7 @@ def video2imgs(videoPath, face_score_model, output_size=256):
         print(box)
 
         if box is not None:
-            x1, y1, x2, y2 = map("int", box)
+            x1, y1, x2, y2 = map(int, box[0])
             # Expand the box slightly and make it square
             w, h = x2 - x1, y2 - y1
             size = max(w, h)
