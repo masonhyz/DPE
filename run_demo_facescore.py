@@ -116,8 +116,6 @@ def crop_img(face_score_model, frame, output_size=256, scale=1.5):
     return face_crop
 
 
-
-
 class Demo(nn.Module):
     def __init__(self, args):
         super(Demo, self).__init__()
@@ -137,19 +135,23 @@ class Demo(nn.Module):
         self.save_path = args.output_folder
         os.makedirs(self.save_path, exist_ok=True)
 
-        # load source video
-        source_video = video2imgs(args.s_path)
+        # # load source video
+        # source_video = video2imgs(args.s_path)
 
-        # preprocess     
-        self.source = []
-        for i in source_video:
-            img = Image.fromarray(cv2.cvtColor(i,cv2.COLOR_BGR2RGB))
-            self.source.append(img_preprocessing(img,256).cuda())
+        # load source video 
+        self.source = video2imgs(args.s_path)
+        # for i in source_video:
+        #     img = Image.fromarray(cv2.cvtColor(i,cv2.COLOR_BGR2RGB))
+        #     self.source.append(img_preprocessing(img,256).cuda())
             
     def run(self):
         # choose a random frame from source video as source img and expression
-        self.source_img = crop_img(self.face_score_modelrandom.choice(self.source))
+        self.source_img = crop_img(self.face_score_model, random.choice(self.source))
+        self.source_img = Image.fromarray(cv2.cvtColor(self.source_img, cv2.COLOR_BGR2RGB))
+        self.source_img = img_preprocessing(self.source_img,256).cuda()
         self.exp_img = crop_img(self.face_score_model, random.choice(self.source))
+        self.exp_img = Image.fromarray(cv2.cvtColor(self.exp_img, cv2.COLOR_BGR2RGB))
+        self.exp_img = img_preprocessing(self.exp_img,256).cuda()
 
         print('==> running')
         with torch.no_grad():
