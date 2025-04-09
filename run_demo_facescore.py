@@ -59,7 +59,6 @@ def load_video_safe(video_path):
             if len(frames) == 500:
                 break
         cap.release()
-        print(len(frames))
         return frames
     
     except Exception as e:
@@ -69,8 +68,9 @@ def load_video_safe(video_path):
 
 def crop_and_preprocess(face_score_model, frame, output_size=256, scale=1.5):
     _, box, confidence = face_score_model.get_reward_from_img(frame)
-    if confidence[0] < 0.9:
-        print("Confidence < 0.9")
+    if (not confidence) or confidence[0] < 0.9:
+        print("No face detected")
+        return np.nan
 
     x1, y1, x2, y2 = map(int, box[0])  # assuming box[0] is the correct bbox
     w, h = x2 - x1, y2 - y1
@@ -131,6 +131,14 @@ class Demo(nn.Module):
         # choose and preprocess random frame pair
         self.source_img = crop_and_preprocess(self.face_score_model, random.choice(self.source))
         self.exp_img = crop_and_preprocess(self.face_score_model, random.choice(self.source))
+        if np.isnan(self.source_img) or np.isnan(self.exp_img):
+            return {"source": None,
+                    "driving": None, 
+                    "fake": None, 
+                    "face_score": np.nan, 
+                    "cos_sim": np.nan, 
+                    "exp_sim": exp_sim
+            }
 
         print('==> running')
         with torch.no_grad():
@@ -186,6 +194,7 @@ class Demo(nn.Module):
                 # compute cosine similarities
                 id_fake = np.transpose(id_fake.numpy()[0], (1,0))
                 id_source = np.transpose(id_source.numpy()[0], (1,0))
+                euclidean_dist = np.mean(np.linalg.norm(id_fake - id_source, axis=1))
                 cos_sim_matrix = cosine_similarity(id_fake, id_source)
                 cos_sim = np.mean(np.diag(cos_sim_matrix))
 
@@ -193,6 +202,7 @@ class Demo(nn.Module):
                 "driving": exp_img, 
                 "fake": fake, 
                 "face_score": face_score, 
+                "euclidean": euclidean_dist,
                 "cos_sim": cos_sim, 
                 "exp_sim": exp_sim
         }
@@ -200,15 +210,18 @@ class Demo(nn.Module):
     def run_batch(self):
         if not self.source:
             return
-        
+        euc_list = []
         exp_sim_list = []
         fs_list = []
         cos_sim_list = []
+
+        base_name = os.path.splitext(os.path.basename(self.args.s_path))[0]
         for i in tqdm(range(self.args.n_samples), desc="Video"):
             res = self.run()
             fs_list.append(res["face_score"])
             exp_sim_list.append(res["exp_sim"])
             cos_sim_list.append(res["cos_sim"])
+            euc_list.append(res["euclidean"])
             if np.isnan(res["face_score"]): 
                 continue
 
@@ -222,22 +235,22 @@ class Demo(nn.Module):
 
             plt.tight_layout()
             plt.subplots_adjust(top=0.90, bottom=0.10) 
-            fig.text(0.5, 0.03, f"Expression Similarity: {res['exp_sim']:.4f}, Generated FaceScore: {res['face_score']:.4f}, Identity Similarity: {res['cos_sim']:.4f}", 
+            fig.text(0.5, 0.03, f"Expression Similarity: {res['exp_sim']:.4f}, Generated FaceScore: {res['face_score']:.4f}, Identity Similarity: {res['cos_sim']:.4f}, Euclidean: {res['euclidean']:.4f}", 
                      ha='center', fontsize=14, color='gray')
-            base_name = os.path.basename(self.args.s_path)
             plt.savefig(os.path.join(self.save_path, f"{base_name}_comp_{i}.png"))
             plt.close()
 
         summary = {
-            'Mean': [np.nanmean(exp_sim_list), np.nanmean(fs_list), np.nanmean(cos_sim_list)],
-            'Median': [np.nanmedian(exp_sim_list), np.nanmedian(fs_list), np.nanmedian(cos_sim_list)],
-            'Std Dev': [np.nanstd(exp_sim_list), np.nanstd(fs_list), np.nanstd(cos_sim_list)],
-            'Max': [np.nanmax(exp_sim_list), np.nanmax(fs_list), np.nanmax(cos_sim_list)],
-            'Min': [np.nanmin(exp_sim_list), np.nanmin(fs_list), np.nanmin(cos_sim_list)],
-            'Count': [np.count_nonzero(~np.isnan(exp_sim_list)), np.count_nonzero(~np.isnan(fs_list)), np.count_nonzero(~np.isnan(cos_sim_list))]
+            'Mean': [np.nanmean(exp_sim_list), np.nanmean(fs_list), np.nanmean(cos_sim_list), np.nanmean(euc_list)],
+            'Median': [np.nanmedian(exp_sim_list), np.nanmedian(fs_list), np.nanmedian(cos_sim_list), np.nanmedian(euc_list)],
+            'Std Dev': [np.nanstd(exp_sim_list), np.nanstd(fs_list), np.nanstd(cos_sim_list), np.nanstd(euc_list)],
+            'Max': [np.nanmax(exp_sim_list), np.nanmax(fs_list), np.nanmax(cos_sim_list), np.nanmax(euc_list)],
+            'Min': [np.nanmin(exp_sim_list), np.nanmin(fs_list), np.nanmin(cos_sim_list), np.nanmin(euc_list)],
+            'Count': [np.count_nonzero(~np.isnan(exp_sim_list)), np.count_nonzero(~np.isnan(fs_list)), np.count_nonzero(~np.isnan(cos_sim_list)), np.count_nonzero(~np.isnan(euc_list))]
         }
-        df = pd.DataFrame(summary, index=["Expression Similarities", "FaceScore", "Identity Similarity"])
+        df = pd.DataFrame(summary, index=["Expression Similarities", "FaceScore", "Identity Similarity (Cos)", "Identity Distance (Euclidean)"])
         print(df.round(4).to_string())
+        df.to_csv(os.path.join(self.save_path, f"{base_name}_summary.csv"))
 
 
 if __name__ == '__main__':
