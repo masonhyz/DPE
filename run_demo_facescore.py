@@ -55,9 +55,10 @@ def video2imgs(videoPath, face_score_model, output_size=256):
 
         # Detect face box
         _, box, confidence = face_score_model.get_reward_from_img(frame)
+        print(box)
 
         if box is not None:
-            x1, y1, x2, y2 = map(int, box)
+            x1, y1, x2, y2 = map("int", box)
             # Expand the box slightly and make it square
             w, h = x2 - x1, y2 - y1
             size = max(w, h)
@@ -105,7 +106,7 @@ class Demo(nn.Module):
 
         # load source video
         source_video = video2imgs(args.s_path, self.face_score_model)
-        
+
         # preprocess     
         self.source = []
         for i in source_video:
