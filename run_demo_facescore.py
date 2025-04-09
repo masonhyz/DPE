@@ -32,19 +32,19 @@ def img_preprocessing(img_path, size):
     return imgs_norm
 
 
-def video2imgs(videoPath):
-    cap = cv2.VideoCapture(videoPath)    
-    judge = cap.isOpened()               
-    img = []
-    while judge:
-        flag, frame = cap.read()         
-        if not flag:
-            break
-        else:
-           img.append(frame) 
-    cap.release()
+# def video2imgs(videoPath):
+#     cap = cv2.VideoCapture(videoPath)    
+#     judge = cap.isOpened()               
+#     img = []
+#     while judge:
+#         flag, frame = cap.read()         
+#         if not flag:
+#             break
+#         else:
+#            img.append(frame) 
+#     cap.release()
 
-    return img
+#     return img
 
 
 def load_video_safe(video_path):
@@ -56,7 +56,10 @@ def load_video_safe(video_path):
             if not ret:
                 break
             frames.append(frame)
+            if len(frames) == 500:
+                break
         cap.release()
+        print(len(frames))
         return frames
     
     except Exception as e:
