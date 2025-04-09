@@ -137,7 +137,7 @@ class Demo(nn.Module):
                     "fake": None, 
                     "face_score": np.nan, 
                     "cos_sim": np.nan, 
-                    "exp_sim": exp_sim
+                    "exp_sim": np.nan
             }
 
         print('==> running')
