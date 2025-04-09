@@ -199,7 +199,7 @@ class Demo(nn.Module):
 
             plt.tight_layout()
             plt.subplots_adjust(top=0.90, bottom=0.10) 
-            fig.text(0.5, 0.03, f"Expression Similarity: {res["exp_sim"]:.4f}, Generated FaceScore: {res["face_score"]:.4f}, Identity Similarity: {res["cos_sim"]:.4f}", 
+            fig.text(0.5, 0.03, f"Expression Similarity: {res['exp_sim']:.4f}, Generated FaceScore: {res['face_score']:.4f}, Identity Similarity: {res['cos_sim']:.4f}", 
                      ha='center', fontsize=14, color='gray')
             plt.savefig(os.path.join(self.save_path, f"comparison_{i}.png"))
             plt.close()
