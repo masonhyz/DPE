@@ -30,59 +30,92 @@ def img_preprocessing(img_path, size):
     return imgs_norm
 
 
-# def video2imgs(videoPath):
-#     cap = cv2.VideoCapture(videoPath)    
-#     judge = cap.isOpened()               
-#     img = []
-#     while judge:
-#         flag, frame = cap.read()         
-#         if not flag:
-#             break
-#         else:
-#            img.append(frame) 
-#     cap.release()
-
-#     return img
-
-def video2imgs(videoPath, face_score_model, output_size=256):
+def video2imgs(videoPath):
     cap = cv2.VideoCapture(videoPath)    
-    img_list = []
-
-    while cap.isOpened():
-        ret, frame = cap.read()
-        if not ret:
+    judge = cap.isOpened()               
+    img = []
+    while judge:
+        flag, frame = cap.read()         
+        if not flag:
             break
-
-        # Detect face box
-        _, box, confidence = face_score_model.get_reward_from_img(frame)
-        print(box)
-
-        if box is not None:
-            x1, y1, x2, y2 = map(int, box[0])
-            # Expand the box slightly and make it square
-            w, h = x2 - x1, y2 - y1
-            size = max(w, h)
-            cx, cy = x1 + w // 2, y1 + h // 2
-            x1_new = max(cx - size // 2, 0)
-            y1_new = max(cy - size // 2, 0)
-            x2_new = x1_new + size
-            y2_new = y1_new + size
-
-            # Ensure within bounds
-            h_frame, w_frame, _ = frame.shape
-            x2_new = min(x2_new, w_frame)
-            y2_new = min(y2_new, h_frame)
-            x1_new = max(x2_new - size, 0)
-            y1_new = max(y2_new - size, 0)
-
-            face_crop = frame[y1_new:y2_new, x1_new:x2_new]
-
-            # Resize to desired square size (e.g., 256x256)
-            face_crop = cv2.resize(face_crop, (output_size, output_size))
-            img_list.append(face_crop)
-
+        else:
+           img.append(frame) 
     cap.release()
-    return img_list
+
+    return img
+
+# def video2imgs(videoPath, face_score_model, output_size=256):
+#     cap = cv2.VideoCapture(videoPath)    
+#     img_list = []
+
+
+#     while cap.isOpened():
+#         ret, frame = cap.read()
+#         if not ret:
+#             break
+
+#         # Detect face box
+#         _, box, confidence = face_score_model.get_reward_from_img(frame)
+#         print(confidence)
+
+#         if box is not None:
+#             x1, y1, x2, y2 = map(int, box[0])  # box[0] is a list
+#             # Expand the box slightly and make it square
+#             w, h = x2 - x1, y2 - y1
+#             size = max(w, h)
+#             cx, cy = x1 + w // 2, y1 + h // 2
+#             x1_new = max(cx - size // 2, 0)
+#             y1_new = max(cy - size // 2, 0)
+#             x2_new = x1_new + size
+#             y2_new = y1_new + size
+
+#             # Ensure within bounds
+#             h_frame, w_frame, _ = frame.shape
+#             x2_new = min(x2_new, w_frame)
+#             y2_new = min(y2_new, h_frame)
+#             x1_new = max(x2_new - size, 0)
+#             y1_new = max(y2_new - size, 0)
+
+#             face_crop = frame[y1_new:y2_new, x1_new:x2_new]
+
+#             # Resize to desired square size (e.g., 256x256)
+#             face_crop = cv2.resize(face_crop, (output_size, output_size))
+#             img_list.append(face_crop)
+
+#     cap.release()
+#     return img_list
+
+
+def crop_img(face_score_model, frame, output_size=256, scale=1.5):
+    _, box, confidence = face_score_model.get_reward_from_img(frame)
+    print(confidence)
+
+    x1, y1, x2, y2 = map(int, box[0])  # assuming box[0] is the correct bbox
+    w, h = x2 - x1, y2 - y1
+    size = int(max(w, h) * scale)  # upscale the size
+
+    # Get center of original box
+    cx = x1 + w // 2
+    cy = y1 + h // 2
+
+    # Compute new square bounds
+    x1_new = max(cx - size // 2, 0)
+    y1_new = max(cy - size // 2, 0)
+    x2_new = x1_new + size
+    y2_new = y1_new + size
+
+    # Clamp to image boundaries
+    h_frame, w_frame, _ = frame.shape
+    x2_new = min(x2_new, w_frame)
+    y2_new = min(y2_new, h_frame)
+    x1_new = max(x2_new - size, 0)
+    y1_new = max(y2_new - size, 0)
+
+    face_crop = frame[y1_new:y2_new, x1_new:x2_new]
+    face_crop = cv2.resize(face_crop, (output_size, output_size))
+    return face_crop
+
+
 
 
 class Demo(nn.Module):
@@ -105,7 +138,7 @@ class Demo(nn.Module):
         os.makedirs(self.save_path, exist_ok=True)
 
         # load source video
-        source_video = video2imgs(args.s_path, self.face_score_model)
+        source_video = video2imgs(args.s_path)
 
         # preprocess     
         self.source = []
@@ -115,8 +148,8 @@ class Demo(nn.Module):
             
     def run(self):
         # choose a random frame from source video as source img and expression
-        self.source_img = random.choice(self.source)
-        self.exp_img = random.choice(self.source)
+        self.source_img = crop_img(self.face_score_modelrandom.choice(self.source))
+        self.exp_img = crop_img(self.face_score_model, random.choice(self.source))
 
         print('==> running')
         with torch.no_grad():
