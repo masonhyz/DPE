@@ -112,7 +112,7 @@ class Demo(nn.Module):
             #     plt.close()
             #     return 
 
-            if exp_sim > 0.97:
+            if exp_sim > self.args.exp_threshold:
                 print(f"Ignored frame pairs with exp sim {exp_sim:.4f}")
                 return None, None, None, np.nan, exp_sim
             
@@ -201,6 +201,7 @@ if __name__ == '__main__':
     parser.add_argument("--model_path", type=str, default='')
     parser.add_argument("--output_folder", type=str, default='')
     parser.add_argument("--n_samples", type=int, default=10)
+    parser.add_argument("--exp_threshold", type=float, default=0.97)
     args = parser.parse_args()
 
     # demo
