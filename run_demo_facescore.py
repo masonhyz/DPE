@@ -221,7 +221,8 @@ class Demo(nn.Module):
             plt.subplots_adjust(top=0.90, bottom=0.10) 
             fig.text(0.5, 0.03, f"Expression Similarity: {res['exp_sim']:.4f}, Generated FaceScore: {res['face_score']:.4f}, Identity Similarity: {res['cos_sim']:.4f}", 
                      ha='center', fontsize=14, color='gray')
-            plt.savefig(os.path.join(self.save_path, f"comparison_{i}.png"))
+            base_name = os.path.basename(self.args.s_path)
+            plt.savefig(os.path.join(self.save_path, f"{base_name}_comp_{i}.png"))
             plt.close()
 
         summary = {
@@ -260,7 +261,7 @@ if __name__ == '__main__':
         dir_path = args.s_path
         mp4_files = [f for f in os.listdir(dir_path) if f.endswith('.mp4')]
         for mp4 in tqdm(mp4_files, desc="Directory"):
-            args.s_path = os.path.join(dir_path, mp4_files)
+            args.s_path = os.path.join(dir_path, mp4)
             print(f"==> Running on {args.s_path}")
             demo = Demo(args)
             demo.run_batch()
