@@ -181,7 +181,7 @@ class Demo(nn.Module):
         exp_sim_list = []
         fs_list = []
         cos_sim_list = []
-        for i in tqdm(range(self.args.n_samples)):
+        for i in tqdm(range(self.args.n_samples), desc="Video"):
             res = self.run()
             fs_list.append(res["face_score"])
             exp_sim_list.append(res["exp_sim"])
@@ -231,6 +231,16 @@ if __name__ == '__main__':
     parser.add_argument("--eval", type=str, default="both")
     args = parser.parse_args()
 
-    # demo
-    demo = Demo(args)
-    demo.run_batch()
+    if args.s_path.endswith('.mp4'):
+        # run single video
+        demo = Demo(args)
+        demo.run_batch()
+    else:
+        # run full directory
+        dir_path = args.s_path
+        mp4_files = [f for f in os.listdir(dir_path) if f.endswith('.mp4')]
+        for mp4 in tqdm(mp4_files, desc="Directory"):
+            args.s_path = os.path.join(dir_path, mp4_files)
+            print(f"==> Running on {args.s_path}")
+            demo = Demo(args)
+            demo.run_batch()
