@@ -47,6 +47,23 @@ def video2imgs(videoPath):
     return img
 
 
+def load_video_safe(video_path):
+    try:
+        cap = cv2.VideoCapture(video_path)
+        frames = []
+        while cap.isOpened():
+            ret, frame = cap.read()
+            if not ret:
+                break
+            frames.append(frame)
+        cap.release()
+        return frames
+    
+    except Exception as e:
+        print(f"Failed to load video {video_path}: {e}")
+        return None
+
+
 def crop_and_preprocess(face_score_model, frame, output_size=256, scale=1.5):
     _, box, confidence = face_score_model.get_reward_from_img(frame)
     if confidence[0] < 0.9:
@@ -105,7 +122,7 @@ class Demo(nn.Module):
         print('==> loading data')
         self.save_path = args.output_folder
         os.makedirs(self.save_path, exist_ok=True)
-        self.source = video2imgs(args.s_path)
+        self.source = load_video_safe(args.s_path)
         
     def run(self):
         # choose and preprocess random frame pair
@@ -178,6 +195,9 @@ class Demo(nn.Module):
         }
 
     def run_batch(self):
+        if not self.source:
+            return
+        
         exp_sim_list = []
         fs_list = []
         cos_sim_list = []
