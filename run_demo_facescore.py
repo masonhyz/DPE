@@ -249,7 +249,7 @@ class Demo(nn.Module):
             
             # save data pair
             try:
-                if res["face_score"] > 1 and res["cos_sim"] > 0.95 and res["euclidean"] < 20:
+                if res["face_score"] > self.args.face_score_threshold and res["cos_sim"] > self.args.cos_sim_threshold and res["euclidean"] < self.args.euclidean_threshold:
                     save_folder = qualified_path
                 else:
                     save_folder = disqualified_path
@@ -283,8 +283,11 @@ if __name__ == '__main__':
     parser.add_argument("--model_path", type=str, default='')
     parser.add_argument("--output_folder", type=str, default='')
     parser.add_argument("--n_samples", type=int, default=10)
-    parser.add_argument("--exp_threshold", type=float, default=0.97)
     parser.add_argument("--eval", type=str, default="both")
+    parser.add_argument("--exp_threshold", type=float, default=0.97)
+    parser.add_argument("--face_score_threshold", type=float, default=1.0)
+    parser.add_argument("--cos_sim_threshold", type=float, default=0.95)
+    parser.add_argument("--euclidean_threshold", type=float, default=20.0)
     args = parser.parse_args()
 
     if args.s_path.endswith('.mp4'):
