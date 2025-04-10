@@ -132,6 +132,7 @@ class Demo(nn.Module):
         self.source_img = crop_and_preprocess(self.face_score_model, random.choice(self.source))
         self.exp_img = crop_and_preprocess(self.face_score_model, random.choice(self.source))
         if self.source_img is None or self.exp_img is None:
+            print("preprocessing failed")
             return {"source": None,
                     "driving": None, 
                     "fake": None, 
@@ -154,9 +155,9 @@ class Demo(nn.Module):
                 return {"source": None,
                         "driving": None, 
                         "fake": None, 
+                        "exp_sim": exp_sim,
                         "face_score": np.nan, 
                         "cos_sim": np.nan, 
-                        "exp_sim": exp_sim,
                         "euclidean": np.nan
                 }
             
@@ -210,6 +211,11 @@ class Demo(nn.Module):
         }
 
     def run_batch(self):
+        qualified_path = os.path.join(self.save_path, "qualified")
+        disqualified_path = os.path.join(self.save_path, "disqualified")
+        os.makedirs(qualified_path, exist_ok=True)
+        os.makedirs(disqualified_path, exist_ok=True)
+
         if not self.source:
             return
         euc_list = []
@@ -225,14 +231,7 @@ class Demo(nn.Module):
             cos_sim_list.append(res["cos_sim"])
             euc_list.append(res["euclidean"])
 
-            try:
-                indicator = np.isnan(res["face_score"])
-                if indicator:
-                    continue
-            except:
-                print("facescore not found")
-                continue
-
+            # comparison image
             fig, axes = plt.subplots(1, 3, figsize=(12, 4))
             titles = ["Source Image", "Expression Image", "Generated Image"]
             images = [res["source"], res["driving"], res["fake"]]
@@ -242,12 +241,24 @@ class Demo(nn.Module):
                 ax.axis("off")
 
             plt.tight_layout()
-            plt.subplots_adjust(top=0.90, bottom=0.10) 
+            plt.subplots_adjust(top=0.90, bottom=0.10)
             fig.text(0.5, 0.03, f"Expression Similarity: {res['exp_sim']:.4f}, Generated FaceScore: {res['face_score']:.4f}, Identity Similarity: {res['cos_sim']:.4f}, Euclidean: {res['euclidean']:.4f}", 
                      ha='center', fontsize=14, color='gray')
             plt.savefig(os.path.join(self.save_path, f"{base_name}_comp_{i}.png"))
             plt.close()
-
+            
+            # save data pair
+            try:
+                if res["face_score"] > 1 and res["cos_sim"] > 0.95 and res["euclidean"] < 20:
+                    save_folder = qualified_path
+                else:
+                    save_folder = disqualified_path
+            except:
+                save_folder = disqualified_path
+            Image.fromarray(res["source"]).save(os.path.join(save_folder, f"{base_name}_source_{i}.png"))
+            Image.fromarray(res["fake"]).save(os.path.join(save_folder, f"{base_name}_fake_{i}.png"))
+            
+        # summary for batch
         summary = {
             'Mean': [np.nanmean(exp_sim_list), np.nanmean(fs_list), np.nanmean(cos_sim_list), np.nanmean(euc_list)],
             'Median': [np.nanmedian(exp_sim_list), np.nanmedian(fs_list), np.nanmedian(cos_sim_list), np.nanmedian(euc_list)],
