@@ -203,7 +203,7 @@ class Demo(nn.Module):
         return {"source": source_img,
                 "driving": exp_img, 
                 "fake": fake, 
-                "face_score": face_score if face_score.size > 0 else np.nan, 
+                "face_score": face_score, 
                 "euclidean": euclidean_dist,
                 "cos_sim": cos_sim, 
                 "exp_sim": exp_sim
@@ -224,7 +224,13 @@ class Demo(nn.Module):
             exp_sim_list.append(res["exp_sim"])
             cos_sim_list.append(res["cos_sim"])
             euc_list.append(res["euclidean"])
-            if np.isnan(res["face_score"]): 
+
+            try:
+                indicator = np.isnan(res["face_score"])
+                if indicator:
+                    continue
+            except:
+                print("facescore not found")
                 continue
 
             fig, axes = plt.subplots(1, 3, figsize=(12, 4))
