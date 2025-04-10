@@ -225,40 +225,43 @@ class Demo(nn.Module):
 
         base_name = os.path.splitext(os.path.basename(self.args.s_path))[0]
         for i in tqdm(range(self.args.n_samples), desc="Video"):
-            res = self.run()
-            fs_list.append(res["face_score"])
-            exp_sim_list.append(res["exp_sim"])
-            cos_sim_list.append(res["cos_sim"])
-            euc_list.append(res["euclidean"])
-            if res["source"] is None:
-                continue
-
-            # comparison image
-            fig, axes = plt.subplots(1, 3, figsize=(12, 4))
-            titles = ["Source Image", "Expression Image", "Generated Image"]
-            images = [res["source"], res["driving"], res["fake"]]
-            for ax, img, title in zip(axes, images, titles):
-                ax.imshow(img)
-                ax.set_title(title)
-                ax.axis("off")
-
-            plt.tight_layout()
-            plt.subplots_adjust(top=0.90, bottom=0.10)
-            fig.text(0.5, 0.03, f"Expression Similarity: {res['exp_sim']:.4f}, Generated FaceScore: {res['face_score']:.4f}, Identity Similarity: {res['cos_sim']:.4f}, Euclidean: {res['euclidean']:.4f}", 
-                     ha='center', fontsize=14, color='gray')
-            plt.savefig(os.path.join(self.save_path, f"{base_name}_{i}_comp.png"))
-            plt.close()
-            
-            # save data pair
             try:
-                if res["face_score"] > self.args.face_score_threshold and res["cos_sim"] > self.args.cos_sim_threshold and res["euclidean"] < self.args.euclidean_threshold:
-                    save_folder = qualified_path
-                else:
+                res = self.run()
+                fs_list.append(res["face_score"])
+                exp_sim_list.append(res["exp_sim"])
+                cos_sim_list.append(res["cos_sim"])
+                euc_list.append(res["euclidean"])
+                if res["source"] is None:
+                    continue
+
+                # comparison image
+                fig, axes = plt.subplots(1, 3, figsize=(12, 4))
+                titles = ["Source Image", "Expression Image", "Generated Image"]
+                images = [res["source"], res["driving"], res["fake"]]
+                for ax, img, title in zip(axes, images, titles):
+                    ax.imshow(img)
+                    ax.set_title(title)
+                    ax.axis("off")
+
+                plt.tight_layout()
+                plt.subplots_adjust(top=0.90, bottom=0.10)
+                fig.text(0.5, 0.03, f"Expression Similarity: {res['exp_sim']:.4f}, Generated FaceScore: {res['face_score']:.4f}, Identity Similarity: {res['cos_sim']:.4f}, Euclidean: {res['euclidean']:.4f}", 
+                        ha='center', fontsize=14, color='gray')
+                plt.savefig(os.path.join(self.save_path, f"{base_name}_{i}_comp.png"))
+                plt.close()
+                
+                # save data pair
+                try:
+                    if res["face_score"] > self.args.face_score_threshold and res["cos_sim"] > self.args.cos_sim_threshold and res["euclidean"] < self.args.euclidean_threshold:
+                        save_folder = qualified_path
+                    else:
+                        save_folder = disqualified_path
+                except:
                     save_folder = disqualified_path
+                Image.fromarray(res["source"]).save(os.path.join(save_folder, f"{base_name}_{i}_source.png"))
+                Image.fromarray(res["fake"]).save(os.path.join(save_folder, f"{base_name}_{i}_fake.png"))
             except:
-                save_folder = disqualified_path
-            Image.fromarray(res["source"]).save(os.path.join(save_folder, f"{base_name}_{i}_source.png"))
-            Image.fromarray(res["fake"]).save(os.path.join(save_folder, f"{base_name}_{i}_fake.png"))
+                print(f"processing failed for {base_name}_{i}")
             
         # summary for batch
         summary = {
