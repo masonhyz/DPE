@@ -230,6 +230,8 @@ class Demo(nn.Module):
             exp_sim_list.append(res["exp_sim"])
             cos_sim_list.append(res["cos_sim"])
             euc_list.append(res["euclidean"])
+            if res["source"] is None:
+                continue
 
             # comparison image
             fig, axes = plt.subplots(1, 3, figsize=(12, 4))
