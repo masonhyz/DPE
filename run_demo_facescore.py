@@ -203,7 +203,7 @@ class Demo(nn.Module):
         return {"source": source_img,
                 "driving": exp_img, 
                 "fake": fake, 
-                "face_score": face_score, 
+                "face_score": face_score if face_score.size > 0 else np.nan, 
                 "euclidean": euclidean_dist,
                 "cos_sim": cos_sim, 
                 "exp_sim": exp_sim
