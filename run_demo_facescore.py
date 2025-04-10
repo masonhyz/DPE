@@ -70,7 +70,7 @@ def crop_and_preprocess(face_score_model, frame, output_size=256, scale=1.5):
     _, box, confidence = face_score_model.get_reward_from_img(frame)
     if (not confidence) or confidence[0] < 0.9:
         print("No face detected")
-        return np.nan
+        return None
 
     x1, y1, x2, y2 = map(int, box[0])  # assuming box[0] is the correct bbox
     w, h = x2 - x1, y2 - y1
@@ -131,13 +131,14 @@ class Demo(nn.Module):
         # choose and preprocess random frame pair
         self.source_img = crop_and_preprocess(self.face_score_model, random.choice(self.source))
         self.exp_img = crop_and_preprocess(self.face_score_model, random.choice(self.source))
-        if np.isnan(self.source_img) or np.isnan(self.exp_img):
+        if self.source_img is None or self.exp_img is None:
             return {"source": None,
                     "driving": None, 
                     "fake": None, 
                     "face_score": np.nan, 
                     "cos_sim": np.nan, 
-                    "exp_sim": np.nan
+                    "exp_sim": np.nan,
+                    "euclidean": np.nan
             }
 
         print('==> running')
@@ -155,7 +156,8 @@ class Demo(nn.Module):
                         "fake": None, 
                         "face_score": np.nan, 
                         "cos_sim": np.nan, 
-                        "exp_sim": exp_sim
+                        "exp_sim": exp_sim,
+                        "euclidean": np.nan
                 }
             
             # transfer expression
