@@ -1,11 +1,20 @@
-import os
 import glob
 import argparse
 import pandas as pd
 from tqdm import tqdm
 
-from LibreFace.libreface.detector import Detector
-from LibreFace.libreface.config import Config
+import sys
+import os
+
+# Automatically add LibreFace to sys.path
+current_dir = os.path.dirname(os.path.abspath(__file__))
+libreface_path = os.path.join(current_dir, "LibreFace")
+sys.path.append(libreface_path)
+
+# Now you can import
+from libreface.detector import Detector
+from libreface.config import Config
+
 
 def extract_aus(image_path, detector):
     # Get facial info
