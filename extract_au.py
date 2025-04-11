@@ -4,8 +4,8 @@ import argparse
 import pandas as pd
 from tqdm import tqdm
 
-from libreface.detector import Detector
-from libreface.config import Config
+from LibreFace.libreface.detector import Detector
+from LibreFace.libreface.config import Config
 
 def extract_aus(image_path, detector):
     # Get facial info
