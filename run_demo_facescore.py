@@ -301,13 +301,13 @@ if __name__ == '__main__':
         demo.run_batch()
     else:
         # run full directory
-        try:
-            dir_path = args.s_path
-            mp4_files = [f for f in os.listdir(dir_path) if f.endswith('.mp4')]
-            for mp4 in tqdm(mp4_files, desc="Directory"):
+        dir_path = args.s_path
+        mp4_files = [f for f in os.listdir(dir_path) if f.endswith('.mp4')]
+        for mp4 in tqdm(mp4_files, desc="Directory"):
+            try:
                 args.s_path = os.path.join(dir_path, mp4)
                 print(f"==> Running on {args.s_path}")
                 demo = Demo(args)
                 demo.run_batch()
-        except:
-            print(f"{dir_path} failed.")
+            except:
+                print(f"{args.s_path} failed")
