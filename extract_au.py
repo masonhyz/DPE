@@ -9,7 +9,7 @@ libreface_path = os.path.join(current_dir, "LibreFace")
 sys.path.append(libreface_path)
 
 # Import directly from AU_Detection
-from libreface.AU_Detection.solver_inference_image import Detector
+from LibreFace import libreFace
 
 # Initialize detector
 detector = Detector()
