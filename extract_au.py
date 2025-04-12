@@ -9,7 +9,7 @@ libreface_path = os.path.join(current_dir, "LibreFace")
 sys.path.append(libreface_path)
 
 # Import directly from AU_Detection
-from LibreFace import libreFace
+import LibreFace.libreface
 
 # Initialize detector
 detector = Detector()
