@@ -1,32 +1,54 @@
 import os
 import sys
+import argparse
 from PIL import Image
 import pandas as pd
+from tqdm import tqdm
 
-# Add LibreFace to the path
+# Add LibreFace to sys.path
 current_dir = os.path.dirname(os.path.abspath(__file__))
 libreface_path = os.path.join(current_dir, "LibreFace")
 sys.path.append(libreface_path)
 
-# Import directly from AU_Detection
+# Import from libreface
 import LibreFace.libreface as libreface
 
+def extract_aus_from_image(image_path):
+    try:
+        result = libreface.get_facial_attributes(image_path)
+        if result and result.get("detected_aus"):
+            data = result["detected_aus"]
+            data["filename"] = os.path.basename(image_path)
+            return data
+        else:
+            print(f"[WARNING] No AUs detected in {image_path}")
+            return None
+    except Exception as e:
+        print(f"[ERROR] Failed to process {image_path}: {e}")
+        return None
 
-# Path to your image
-image_path = "res/whole_dir3/qualified/video85_6_source.png"
+def main(image_dir):
+    image_paths = [os.path.join(image_dir, f)
+                   for f in os.listdir(image_dir)
+                   if f.lower().endswith(".png")]
 
-detected_attributes = libreface.get_facial_attributes(image_path)
-print(detected_attributes)
-# Run AU detection
-results = detector.detect(image_path)
+    all_aus = []
 
-# Print AU results
-if results is not None and results['aus'] is not None:
-    print("Extracted AUs:")
-    for k, v in results['aus'].items():
-        print(f"{k}: {v:.3f}")
-    
-    # Save to CSV (optional)
-    pd.DataFrame([results['aus']]).to_csv("your_image_aus.csv", index=False)
-else:
-    print("No AUs detected.")
+    for img_path in tqdm(sorted(image_paths), desc="Extracting AUs"):
+        aus = extract_aus_from_image(img_path)
+        if aus:
+            all_aus.append(aus)
+
+    if all_aus:
+        df = pd.DataFrame(all_aus)
+        out_path = os.path.join(image_dir, "extracted_aus.csv")
+        df.to_csv(out_path, index=False)
+        print(f"[INFO] Saved AU data to: {out_path}")
+    else:
+        print("[INFO] No AUs were extracted.")
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Extract AUs from .png images in a directory.")
+    parser.add_argument("--dir", type=str, required=True, help="Path to the directory containing .png images")
+    args = parser.parse_args()
+    main(args.dir)
