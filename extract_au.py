@@ -9,14 +9,14 @@ libreface_path = os.path.join(current_dir, "LibreFace")
 sys.path.append(libreface_path)
 
 # Import directly from AU_Detection
-import LibreFace.libreface
+import LibreFace.libreface as libreface
 
-# Initialize detector
-detector = Detector()
 
 # Path to your image
 image_path = "res/whole_dir3/qualified/video85_6_source.png"
 
+detected_attributes = libreface.get_facial_attributes(image_path)
+print(detected_attributes)
 # Run AU detection
 results = detector.detect(image_path)
 
