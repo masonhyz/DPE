@@ -115,9 +115,9 @@ class Demo(nn.Module):
         self.gen.eval()
 
         # load facescore model
-        self.face_score_model = FaceScore('checkpoints/FS_model.pt', med_config='checkpoints/med_config.json')
+        self.face_score_model = FaceScore('/home/masonhyz/DPE/checkpoints/FS_model.pt', med_config='checkpoints/med_config.json')
         # load arcface model
-        ckpt = 'checkpoints/insightface_glint360k.pth'
+        ckpt = '/home/masonhyz/DPE/checkpoints/insightface_glint360k.pth'
         self.arcface = iresnet100().eval()
         info = self.arcface.load_state_dict(torch.load(ckpt))
         print(info)
