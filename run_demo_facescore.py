@@ -303,8 +303,10 @@ if __name__ == '__main__':
         # run full directory
         dir_path = args.s_path
         mp4_files = [f for f in os.listdir(dir_path) if f.endswith('.mp4')]
-        print(mp4_files)
+        # print(mp4_files)
+
         for mp4 in tqdm(mp4_files, desc="Directory"):
+            print(dir_path, mp4)
             try:
                 args.s_path = os.path.join(dir_path, mp4)
                 print(f"==> Running on {args.s_path}")
