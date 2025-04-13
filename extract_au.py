@@ -16,6 +16,7 @@ import LibreFace.libreface as libreface
 def extract_aus_from_image(image_path):
     try:
         result = libreface.get_facial_attributes(image_path)
+        print(result)
         if result and result.get("au_intensities"):
             data = result["au_intensities"]
             data["filename"] = os.path.basename(image_path)
