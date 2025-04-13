@@ -296,7 +296,7 @@ if __name__ == '__main__':
 
     facescore = FaceScore('./checkpoints/FS_model.pt', med_config='checkpoints/med_config.json')
 
-    ckpt = '/checkpoints/insightface_glint360k.pth'
+    ckpt = './checkpoints/insightface_glint360k.pth'
     arcface = iresnet100().eval()
     info = arcface.load_state_dict(torch.load(ckpt))
     print(info)
