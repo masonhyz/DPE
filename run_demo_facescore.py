@@ -102,25 +102,19 @@ def crop_and_preprocess(face_score_model, frame, output_size=256, scale=1.5):
 
 
 class Demo(nn.Module):
-    def __init__(self, args):
+    def __init__(self, args, generator, arcface, facescore):
         super(Demo, self).__init__()
 
         self.args = args
 
-        model_path = args.model_path
-        print('==> loading model')
-        self.gen = Generator(args.size, args.latent_dim_style, args.latent_dim_motion, args.channel_multiplier).cuda()
-        weight = torch.load(model_path, weights_only=False, map_location=lambda storage, loc: storage)['gen']
-        self.gen.load_state_dict(weight)
-        self.gen.eval()
+        # model_path = args.model_path
+        # print('==> loading model')
+        self.gen = generator
 
         # load facescore model
-        self.face_score_model = FaceScore('./checkpoints/FS_model.pt', med_config='checkpoints/med_config.json')
+        self.face_score_model = facescore
         # load arcface model
-        ckpt = '/checkpoints/insightface_glint360k.pth'
-        self.arcface = iresnet100().eval()
-        info = self.arcface.load_state_dict(torch.load(ckpt))
-        print(info)
+        self.arcface = arcface
 
         print('==> loading data')
         self.save_path = args.output_folder
@@ -218,37 +212,37 @@ class Demo(nn.Module):
 
         if not self.source:
             return
-        euc_list = []
-        exp_sim_list = []
-        fs_list = []
-        cos_sim_list = []
+        # euc_list = []
+        # exp_sim_list = []
+        # fs_list = []
+        # cos_sim_list = []
 
         base_name = os.path.splitext(os.path.basename(self.args.s_path))[0]
         for i in tqdm(range(self.args.n_samples), desc="Video"):
             try:
                 res = self.run()
-                fs_list.append(res["face_score"])
-                exp_sim_list.append(res["exp_sim"])
-                cos_sim_list.append(res["cos_sim"])
-                euc_list.append(res["euclidean"])
+                # fs_list.append(res["face_score"])
+                # exp_sim_list.append(res["exp_sim"])
+                # cos_sim_list.append(res["cos_sim"])
+                # euc_list.append(res["euclidean"])
                 if res["source"] is None:
                     continue
 
-                # comparison image
-                fig, axes = plt.subplots(1, 3, figsize=(12, 4))
-                titles = ["Source Image", "Expression Image", "Generated Image"]
-                images = [res["source"], res["driving"], res["fake"]]
-                for ax, img, title in zip(axes, images, titles):
-                    ax.imshow(img)
-                    ax.set_title(title)
-                    ax.axis("off")
+                # # comparison image
+                # fig, axes = plt.subplots(1, 3, figsize=(12, 4))
+                # titles = ["Source Image", "Expression Image", "Generated Image"]
+                # images = [res["source"], res["driving"], res["fake"]]
+                # for ax, img, title in zip(axes, images, titles):
+                #     ax.imshow(img)
+                #     ax.set_title(title)
+                #     ax.axis("off")
 
-                plt.tight_layout()
-                plt.subplots_adjust(top=0.90, bottom=0.10)
-                fig.text(0.5, 0.03, f"Expression Similarity: {res['exp_sim']:.4f}, Generated FaceScore: {res['face_score']:.4f}, Identity Similarity: {res['cos_sim']:.4f}, Euclidean: {res['euclidean']:.4f}", 
-                        ha='center', fontsize=14, color='gray')
-                plt.savefig(os.path.join(self.save_path, f"{base_name}_{i}_comp.png"))
-                plt.close()
+                # plt.tight_layout()
+                # plt.subplots_adjust(top=0.90, bottom=0.10)
+                # fig.text(0.5, 0.03, f"Expression Similarity: {res['exp_sim']:.4f}, Generated FaceScore: {res['face_score']:.4f}, Identity Similarity: {res['cos_sim']:.4f}, Euclidean: {res['euclidean']:.4f}", 
+                #         ha='center', fontsize=14, color='gray')
+                # plt.savefig(os.path.join(self.save_path, f"{base_name}_{i}_comp.png"))
+                # plt.close()
                 
                 # save data pair
                 try:
@@ -264,17 +258,17 @@ class Demo(nn.Module):
                 print(f"processing failed for {base_name}_{i}")
             
         # summary for batch
-        summary = {
-            'Mean': [np.nanmean(exp_sim_list), np.nanmean(fs_list), np.nanmean(cos_sim_list), np.nanmean(euc_list)],
-            'Median': [np.nanmedian(exp_sim_list), np.nanmedian(fs_list), np.nanmedian(cos_sim_list), np.nanmedian(euc_list)],
-            'Std Dev': [np.nanstd(exp_sim_list), np.nanstd(fs_list), np.nanstd(cos_sim_list), np.nanstd(euc_list)],
-            'Max': [np.nanmax(exp_sim_list), np.nanmax(fs_list), np.nanmax(cos_sim_list), np.nanmax(euc_list)],
-            'Min': [np.nanmin(exp_sim_list), np.nanmin(fs_list), np.nanmin(cos_sim_list), np.nanmin(euc_list)],
-            'Count': [np.count_nonzero(~np.isnan(exp_sim_list)), np.count_nonzero(~np.isnan(fs_list)), np.count_nonzero(~np.isnan(cos_sim_list)), np.count_nonzero(~np.isnan(euc_list))]
-        }
-        df = pd.DataFrame(summary, index=["Expression Similarities", "FaceScore", "Identity Similarity (Cos)", "Identity Distance (Euclidean)"])
-        print(df.round(4).to_string())
-        df.to_csv(os.path.join(self.save_path, f"{base_name}_summary.csv"))
+        # summary = {
+        #     'Mean': [np.nanmean(exp_sim_list), np.nanmean(fs_list), np.nanmean(cos_sim_list), np.nanmean(euc_list)],
+        #     'Median': [np.nanmedian(exp_sim_list), np.nanmedian(fs_list), np.nanmedian(cos_sim_list), np.nanmedian(euc_list)],
+        #     'Std Dev': [np.nanstd(exp_sim_list), np.nanstd(fs_list), np.nanstd(cos_sim_list), np.nanstd(euc_list)],
+        #     'Max': [np.nanmax(exp_sim_list), np.nanmax(fs_list), np.nanmax(cos_sim_list), np.nanmax(euc_list)],
+        #     'Min': [np.nanmin(exp_sim_list), np.nanmin(fs_list), np.nanmin(cos_sim_list), np.nanmin(euc_list)],
+        #     'Count': [np.count_nonzero(~np.isnan(exp_sim_list)), np.count_nonzero(~np.isnan(fs_list)), np.count_nonzero(~np.isnan(cos_sim_list)), np.count_nonzero(~np.isnan(euc_list))]
+        # }
+        # df = pd.DataFrame(summary, index=["Expression Similarities", "FaceScore", "Identity Similarity (Cos)", "Identity Distance (Euclidean)"])
+        # print(df.round(4).to_string())
+        # df.to_csv(os.path.join(self.save_path, f"{base_name}_summary.csv"))
 
 
 if __name__ == '__main__':
@@ -295,22 +289,32 @@ if __name__ == '__main__':
     parser.add_argument("--euclidean_threshold", type=float, default=20.0)
     args = parser.parse_args()
 
+    gen = Generator(args.size, args.latent_dim_style, args.latent_dim_motion, args.channel_multiplier).cuda()
+    weight = torch.load(args.model_path, weights_only=False, map_location=lambda storage, loc: storage)['gen']
+    gen.load_state_dict(weight)
+    gen.eval()
+
+    facescore = FaceScore('./checkpoints/FS_model.pt', med_config='checkpoints/med_config.json')
+
+    ckpt = '/checkpoints/insightface_glint360k.pth'
+    arcface = iresnet100().eval()
+    info = arcface.load_state_dict(torch.load(ckpt))
+    print(info)
+    
     if args.s_path.endswith('.mp4'):
         # run single video
-        demo = Demo(args)
+        demo = Demo(args, gen, arcface, facescore)
         demo.run_batch()
     else:
         # run full directory
         dir_path = args.s_path
         mp4_files = [f for f in os.listdir(dir_path) if f.endswith('.mp4')]
-        print(dir_path)
 
         for mp4 in tqdm(mp4_files, desc="Directory"):
-            print(dir_path)
             try:
                 args.s_path = os.path.join(dir_path, mp4)
                 print(f"==> Running on {args.s_path}")
-                demo = Demo(args)
+                demo = Demo(args, gen, arcface, facescore)
                 demo.run_batch()
             except:
                 print(f"{args.s_path} failed")
