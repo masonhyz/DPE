@@ -8,6 +8,7 @@ from diffusers import StableDiffusionInstructPix2PixPipeline
 from diffusers.models.embeddings import get_timestep_embedding
 from tqdm import tqdm
 import argparse
+import pandas as pd
 
 
 # --- AU Preprocessing Module ---
@@ -34,21 +35,33 @@ class AUToPromptEmbed(nn.Module):
 class AUImagePairDataset(Dataset):
     def __init__(self, image_dir, transform=None):
         self.image_dir = image_dir
+        self.aus = self._load_aus()
         self.pairs = self._find_pairs()
         self.transform = transform or transforms.Compose([
             transforms.Resize((512, 512)),
             transforms.ToTensor()
         ])
+        self.n_aus = 12  # There are 12 AU intensity fields
+
+    def _load_aus(self):
+        csv_path = os.path.join(self.image_dir, "extracted_aus.csv")
+        df = pd.read_csv(csv_path)
+        df.set_index("filename", inplace=True)
+        return df
 
     def _find_pairs(self):
-        files = os.listdir(self.image_dir)
-        pairs = []
-        keys = set(f.split("_")[0] + "_" + f.split("_")[1] for f in files)
-        for key in keys:
-            source = f"{key}_source.jpeg"
-            fake = f"{key}_fake.jpeg"
-            if source in files and fake in files:
-                pairs.append((source, fake))
+        files = [f for f in os.listdir(self.image_dir) if f.endswith(".png")]
+        prefix_map = {}
+
+        for f in files:
+            if "_source.png" in f:
+                key = f.replace("_source.png", "")
+                prefix_map.setdefault(key, {})["source"] = f
+            elif "_fake.png" in f:
+                key = f.replace("_fake.png", "")
+                prefix_map.setdefault(key, {})["fake"] = f
+
+        pairs = [(v["source"], v["fake"]) for v in prefix_map.values() if "source" in v and "fake" in v]
         return pairs
 
     def __len__(self):
@@ -65,24 +78,20 @@ class AUImagePairDataset(Dataset):
         source_tensor = self.transform(source_img)
         fake_tensor = self.transform(fake_img)
 
-        source_aus = None
-        fake_aus = None
-
-        # If either set of AUs is missing, return random vector
-        if not source_aus or not fake_aus:
-            au_diff = torch.randn(12)
-        else:
-            keys = sorted(set(source_aus) & set(fake_aus))
-            au_diff = torch.tensor([fake_aus[k] - source_aus[k] for k in keys], dtype=torch.float32)
-            if len(au_diff) < 12:
-                padding = torch.zeros(12 - len(au_diff))
-                au_diff = torch.cat([au_diff, padding], dim=0)
+        try:
+            source_aus = self.aus.loc[source_file].values.astype(float)
+            fake_aus = self.aus.loc[fake_file].values.astype(float)
+            au_diff = torch.tensor(fake_aus - source_aus, dtype=torch.float32)
+        except KeyError:
+            print(f"[WARNING] AU data missing for {source_file} or {fake_file}, using random.")
+            au_diff = torch.randn(self.n_aus)
 
         return {
             "source": source_tensor,
             "target": fake_tensor,
             "au_diff": au_diff
         }
+
 
 # --- Full Training Pipeline ---
 class AUPix2PixPipeline(nn.Module):
