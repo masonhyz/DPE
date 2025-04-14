@@ -6,16 +6,9 @@ from torchvision import transforms
 from PIL import Image
 from diffusers import StableDiffusionInstructPix2PixPipeline
 from diffusers.models.embeddings import get_timestep_embedding
-import sys
 from tqdm import tqdm
 import argparse
 
-
-# Add LibreFace to path
-current_dir = os.path.dirname(os.path.abspath(__file__))
-library_path = os.path.join(current_dir, "LibreFace")
-sys.path.append(library_path)
-from libreface import get_facial_attributes
 
 # --- AU Preprocessing Module ---
 class AUToPromptEmbed(nn.Module):
@@ -72,8 +65,8 @@ class AUImagePairDataset(Dataset):
         source_tensor = self.transform(source_img)
         fake_tensor = self.transform(fake_img)
 
-        source_aus = get_facial_attributes(source_path).get("detected_aus", {})
-        fake_aus = get_facial_attributes(fake_path).get("detected_aus", {})
+        source_aus = None
+        fake_aus = None
 
         # If either set of AUs is missing, return random vector
         if not source_aus or not fake_aus:
