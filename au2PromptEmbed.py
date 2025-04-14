@@ -120,6 +120,9 @@ def train(args):
 
     print("==> loading dataset")
     dataset = AUImagePairDataset(args.dir)
+    print(dataset[0]["source"])
+    print(dataset[1]["target"])
+    print(dataset[12]["au_diff"])
     dataloader = DataLoader(dataset, batch_size=2, shuffle=True)
 
     print("==> instantiating model")
