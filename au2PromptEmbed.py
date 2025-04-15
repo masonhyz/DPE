@@ -197,6 +197,10 @@ def train(args):
     au_module = AUToPromptEmbed().to(device)
     model = AUPix2PixPipeline(pipe, au_module)
 
+    print("=== Trainable Parameters ===")
+    for name, param in model.named_parameters():
+        print(f"{name}: requires_grad={param.requires_grad}")
+
     print("==> setting up optimizer")
     optimizer = torch.optim.Adam(model.au_processor.parameters(), lr=1e-4)
     loss_fn = nn.MSELoss()
@@ -210,6 +214,8 @@ def train(args):
 
             generated = model(source, au_diff)
             print(generated)
+            print("Generated requires grad:", generated.requires_grad)
+            print("Grad fn:", generated.grad_fn)
             loss = loss_fn(generated, target)
 
             optimizer.zero_grad()
