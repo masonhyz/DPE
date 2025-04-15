@@ -52,7 +52,7 @@ def get_timestep_embedding(
     print(emb.shape)
 
     # Flatten to [B, S * embedding_dim]
-    return emb.view(B, S * embedding_dim)
+    return emb
 
 
 class AUToPromptEmbed(nn.Module):
