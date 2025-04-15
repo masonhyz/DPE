@@ -49,14 +49,13 @@ def get_timestep_embedding(
     # Pad if needed for odd embedding dim
     if embedding_dim % 2 == 1:
         emb = F.pad(emb, (0, 1))
-    print(emb.shape)
 
     # Flatten to [B, S * embedding_dim]
     return emb
 
 
 class AUToPromptEmbed(nn.Module):
-    def __init__(self, embed_dim=2048, input_dim=12, freq_shift=1.0):
+    def __init__(self, embed_dim=768, input_dim=12, freq_shift=1.0):
         super().__init__()
         self.embed_dim = embed_dim
         self.input_dim = input_dim
