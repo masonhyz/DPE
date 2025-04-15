@@ -5,10 +5,53 @@ from torch.utils.data import Dataset, DataLoader
 from torchvision import transforms
 from PIL import Image
 from diffusers import StableDiffusionInstructPix2PixPipeline
-from diffusers.models.embeddings import get_timestep_embedding
+# from diffusers.models.embeddings import get_timestep_embedding
 from tqdm import tqdm
 import argparse
 import pandas as pd
+import math
+import torch.nn.functional as F
+
+
+def get_timestep_embedding(
+    timesteps: torch.Tensor,                # shape: [B, S]
+    embedding_dim: int,                     # embedding dim per scalar
+    flip_sin_to_cos: bool = False,
+    downscale_freq_shift: float = 1,
+    scale: float = 1,
+    max_period: int = 10000,
+):
+    assert timesteps.ndim == 2, "Input must be of shape [B, S]"
+    B, S = timesteps.shape
+    half_dim = embedding_dim // 2
+
+    # Compute the base exponent vector (same for all scalars)
+    exponent = -math.log(max_period) * torch.arange(
+        start=0, end=half_dim, dtype=torch.float32, device=timesteps.device
+    )
+    exponent = exponent / (half_dim - downscale_freq_shift)
+    emb_freqs = torch.exp(exponent)  # [half_dim]
+
+    # Expand timesteps and compute sinusoid inputs
+    # timesteps: [B, S] → [B, S, half_dim]
+    args = timesteps.unsqueeze(-1).float() * emb_freqs  # [B, S, half_dim]
+    emb = scale * args
+
+    # Apply sin and cos → [B, S, half_dim * 2]
+    sin_emb = torch.sin(emb)
+    cos_emb = torch.cos(emb)
+    emb = torch.cat([sin_emb, cos_emb], dim=-1)  # [B, S, embedding_dim]
+
+    # Optionally flip sin and cos
+    if flip_sin_to_cos:
+        emb = torch.cat([emb[:, :, half_dim:], emb[:, :, :half_dim]], dim=-1)
+
+    # Pad if needed for odd embedding dim
+    if embedding_dim % 2 == 1:
+        emb = F.pad(emb, (0, 1))
+
+    # Flatten to [B, S * embedding_dim]
+    return emb.view(B, S * embedding_dim)
 
 
 class AUToPromptEmbed(nn.Module):
@@ -27,6 +70,7 @@ class AUToPromptEmbed(nn.Module):
 
     def forward(self, au_diff):
         # Get sinusoidal positional embedding
+        print(au_diff.shape)
         sinusoid = get_timestep_embedding(
             timesteps=au_diff,
             embedding_dim=self.embed_dim,
@@ -34,6 +78,7 @@ class AUToPromptEmbed(nn.Module):
             flip_sin_to_cos=False,
             scale=1
         )
+        print(sinusoid.shape)
         # Apply trainable transformation
         return self.projection(sinusoid)
 
