@@ -11,7 +11,6 @@ import argparse
 import pandas as pd
 
 
-# --- AU Preprocessing Module ---
 class AUToPromptEmbed(nn.Module):
     def __init__(self, embed_dim=2048, input_dim=12, freq_shift=1.0):
         super().__init__()
@@ -19,17 +18,25 @@ class AUToPromptEmbed(nn.Module):
         self.input_dim = input_dim
         self.freq_shift = freq_shift
 
+        # Optional: Learnable projection after fixed sinusoidal
+        self.projection = nn.Sequential(
+            nn.Linear(embed_dim, embed_dim),
+            nn.ReLU(),
+            nn.Linear(embed_dim, embed_dim)
+        )
+
     def forward(self, au_diff):
-        # au_diff: [B, input_dim]
-        # Use sinusoidal timestep-style encoding
+        # Get sinusoidal positional embedding
         sinusoid = get_timestep_embedding(
-            timesteps=au_diff,  # shape [B, input_dim]
+            timesteps=au_diff,
             embedding_dim=self.embed_dim,
             downscale_freq_shift=self.freq_shift,
             flip_sin_to_cos=False,
             scale=1
         )
-        return sinusoid
+        # Apply trainable transformation
+        return self.projection(sinusoid)
+
 
 # --- Custom Dataset ---
 class AUImagePairDataset(Dataset):
