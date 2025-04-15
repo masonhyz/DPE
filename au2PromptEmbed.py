@@ -51,11 +51,11 @@ def get_timestep_embedding(
         emb = F.pad(emb, (0, 1))
 
     # Flatten to [B, S * embedding_dim]
-    return emb.view(B, S * embedding_dim)
+    return emb
 
 
 class AUToPromptEmbed(nn.Module):
-    def __init__(self, embed_dim=64, input_dim=768, freq_shift=1.0):
+    def __init__(self, embed_dim=64, input_dim=12, freq_shift=1.0):
         super().__init__()
         self.embed_dim = embed_dim
         self.input_dim = input_dim
@@ -63,9 +63,9 @@ class AUToPromptEmbed(nn.Module):
 
         # Optional: Learnable projection after fixed sinusoidal
         self.projection = nn.Sequential(
-            nn.Linear(input_dim, input_dim),
+            nn.Linear(embed_dim, embed_dim),
             nn.ReLU(),
-            nn.Linear(input_dim, embed_dim)
+            nn.Linear(embed_dim, embed_dim)
         )
 
     def forward(self, au_diff):
