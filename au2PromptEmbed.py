@@ -192,6 +192,7 @@ def train(args):
 
     print("==> instantiating model")
     pipe = StableDiffusionInstructPix2PixPipeline.from_pretrained("timbrooks/instruct-pix2pix", torch_dtype=torch.float16).to(device)
+    pipe.safety_checker = None
     au_module = AUToPromptEmbed().to(device)
     model = AUPix2PixPipeline(pipe, au_module)
 
