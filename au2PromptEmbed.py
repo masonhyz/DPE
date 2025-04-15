@@ -195,7 +195,7 @@ def train(args):
             print(source.shape, target.shape, au_diff.shape)
 
             generated = model(source, au_diff)
-            print(generated.shape)
+            print(generated)
             loss = loss_fn(generated, target)
 
             optimizer.zero_grad()
