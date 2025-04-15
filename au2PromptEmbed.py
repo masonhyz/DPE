@@ -55,7 +55,7 @@ def get_timestep_embedding(
 
 
 class AUToPromptEmbed(nn.Module):
-    def __init__(self, embed_dim=64, input_dim=12, freq_shift=1.0):
+    def __init__(self, embed_dim=768, input_dim=12, freq_shift=1.0):
         super().__init__()
         self.embed_dim = embed_dim
         self.input_dim = input_dim
