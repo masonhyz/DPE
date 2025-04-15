@@ -192,8 +192,10 @@ def train(args):
             source = batch["source"].to(device)
             target = batch["target"].to(device)
             au_diff = batch["au_diff"].to(device)
+            print(source.shape, target.shape, au_diff.shape)
 
             generated = model(source, au_diff)
+            print(generated.shape)
             loss = loss_fn(generated, target)
 
             optimizer.zero_grad()
