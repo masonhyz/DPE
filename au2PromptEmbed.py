@@ -101,6 +101,9 @@ class AUImagePairDataset(Dataset):
         df.set_index("filename", inplace=True)
         return df
 
+    def _is_nonzero_file(self, filepath):
+        return os.path.isfile(filepath) and os.path.getsize(filepath) > 0
+
     def _find_pairs(self):
         files = [f for f in os.listdir(self.image_dir) if f.endswith(".png")]
         prefix_map = {}
@@ -113,7 +116,15 @@ class AUImagePairDataset(Dataset):
                 key = f.replace("_fake.png", "")
                 prefix_map.setdefault(key, {})["fake"] = f
 
-        pairs = [(v["source"], v["fake"]) for v in prefix_map.values() if "source" in v and "fake" in v]
+        pairs = []
+        for key, pair in prefix_map.items():
+            if "source" in pair and "fake" in pair:
+                source_path = os.path.join(self.image_dir, pair["source"])
+                fake_path = os.path.join(self.image_dir, pair["fake"])
+                if self._is_nonzero_file(source_path) and self._is_nonzero_file(fake_path):
+                    pairs.append((pair["source"], pair["fake"]))
+                else:
+                    print(f"[SKIP] Skipping pair with 0-byte file: {pair['source']} or {pair['fake']}")
         return pairs
 
     def __len__(self):
@@ -164,6 +175,7 @@ class AUPix2PixPipeline(nn.Module):
             guidance_scale=1.0,
             num_inference_steps=50
         )
+        print(out)
         return out.images
 
 # --- Training Loop ---
