@@ -212,11 +212,11 @@ def train(args):
             au_diff = batch["au_diff"].to(device)
             print(source.shape, target.shape, au_diff.shape)
 
-            generated = model(source, au_diff)
+            generated = model(source, au_diff).float()
             print(generated)
             print("Generated requires grad:", generated.requires_grad)
             print("Grad fn:", generated.grad_fn)
-            loss = loss_fn(generated, target)
+            loss = loss_fn(generated, target.float()).float()
 
             optimizer.zero_grad()
             loss.backward()
