@@ -189,7 +189,7 @@ def train(args):
     print(dataset[1]["target"].shape)
     print(dataset[12]["au_diff"].shape)
     print(len(dataset))
-    dataloader = DataLoader(dataset, batch_size=2, shuffle=True)
+    dataloader = DataLoader(dataset, batch_size=1, shuffle=True)
 
     print("==> instantiating model")
     pipe = StableDiffusionInstructPix2PixPipeline.from_pretrained("timbrooks/instruct-pix2pix", torch_dtype=torch.float16).to(device)
