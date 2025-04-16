@@ -173,7 +173,7 @@ class AUPix2PixPipeline(nn.Module):
             image=source_images,
             prompt_embeds=prompt_embeds,
             guidance_scale=1.0,
-            num_inference_steps=50,
+            num_inference_steps=1,
             output_type="pt"
         )
         print(out)
