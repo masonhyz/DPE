@@ -411,7 +411,8 @@ class CustomStableDiffusionPipeline(StableDiffusionInstructPix2PixPipeline):
         print(timesteps)
         noisy_target_latents = self.scheduler.add_noise(target_latents, noise, timesteps)
 
-        print("noisy:", noisy_target_latents)
+        print("noisy:", noisy_target_latents.shape)
+        print("image:", image_latents.shape)
 
         # # 6. Prepare latent variables
         # num_channels_latents = self.vae.config.latent_channels
