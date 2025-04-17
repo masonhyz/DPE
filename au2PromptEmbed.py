@@ -543,25 +543,27 @@ def train(args):
     loss_fn = nn.MSELoss()
 
     for epoch in tqdm(range(10), desc="epoch"):
-        for batch in tqdm(dataloader, desc="batch"):
+        epoch_loss = 0.0
+        num_batches = 0
+
+        for batch in tqdm(dataloader, desc="batch", leave=False):
             source = batch["source"].to(device)
             target = batch["target"].to(device)
             au_diff = batch["au_diff"].to(device)
-            # print(source.shape, target.shape, au_diff.shape)
 
             noise_pred, noise = model(source, au_diff, target)
-            # print(generated)
-            # print("Generated requires grad:", generated.requires_grad)
-            # print("Grad fn:", generated.grad_fn)
 
-            # print(noise_pred, noise)
             loss = loss_fn(noise_pred.float(), noise.float()).float()
 
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
 
-            print(f"Epoch {epoch}, Loss: {loss.item():.4f}")
+            epoch_loss += loss.item()
+            num_batches += 1
+
+        avg_loss = epoch_loss / num_batches
+        print(f"Epoch {epoch + 1}, Average Loss: {avg_loss:.4f}")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Finetune AU2PromptEmbed preprocesser from image pairs in a directory.")
