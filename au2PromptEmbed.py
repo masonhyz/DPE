@@ -6,6 +6,7 @@ from torchvision import transforms
 from PIL import Image
 from diffusers import StableDiffusionInstructPix2PixPipeline
 from diffusers import DDPMScheduler
+from diffusers import PipelineImageInput
 # from diffusers.models.embeddings import get_timestep_embedding
 from tqdm import tqdm
 import argparse
@@ -13,7 +14,7 @@ import pandas as pd
 import math
 import torch.nn.functional as F
 import random
-from typing import Union, List
+from typing import Union, List, Optional
 
 
 def get_timestep_embedding(
@@ -215,9 +216,6 @@ class CustomStableDiffusionPipeline(StableDiffusionInstructPix2PixPipeline):
         ddpm_scheduler: DDPMScheduler = None,  # new
         output_type: Optional[str] = "pil",
         return_dict: bool = True,
-        callback_on_step_end: Optional[
-            Union[Callable[[int, int, Dict], None], PipelineCallback, MultiPipelineCallbacks]
-        ] = None,
         callback_on_step_end_tensor_inputs: List[str] = ["latents"],
         cross_attention_kwargs: Optional[Dict[str, Any]] = None,
         **kwargs,
