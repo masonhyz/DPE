@@ -188,7 +188,6 @@ class AUPix2PixPipeline(nn.Module):
             prompt_embeds=prompt_embeds,
             guidance_scale=1.0,
             num_inference_steps=1000,
-            output_type="pt"
         )
         # print(out)
         return out
@@ -213,7 +212,6 @@ class CustomStableDiffusionPipeline(StableDiffusionInstructPix2PixPipeline):
         ddpm_scheduler: DDPMScheduler = None,  # new
         callback_on_step_end_tensor_inputs: List[str] = ["latents"],
         cross_attention_kwargs = None,
-        output_type = "pt",
     ):
         
         callback_steps = None
@@ -370,7 +368,7 @@ def train(args):
         print(f"{name}: requires_grad={param.requires_grad}")
 
     print("==> setting up optimizer")
-    optimizer = torch.optim.Adam(model.au_processor.parameters(), lr=1e-6)
+    optimizer = torch.optim.Adam(model.au_processor.parameters(), lr=args.lr)
     loss_fn = nn.MSELoss()
 
     for epoch in tqdm(range(args.epochs), desc="epoch"):
@@ -403,6 +401,7 @@ if __name__ == "__main__":
     parser.add_argument("--dir", type=str, required=True, help="Path to the directory containing .png images")
     parser.add_argument("--batch_size", type=int, default=2)
     parser.add_argument("--epochs", type=int, default=25)
+    parser.add_argument("--lr", type=float, default=1e-4)
 
     args = parser.parse_args()
     train(args)
