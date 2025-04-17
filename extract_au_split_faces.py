@@ -38,7 +38,7 @@ def extract_aus_from_pil(image_pil, tag):
 def main(image_dir):
     image_paths = [os.path.join(image_dir, f)
                    for f in os.listdir(image_dir)
-                   if f.lower().endswith(".png")]
+                   if f.lower().endswith(".jpg")]
 
     all_results = []
 
@@ -50,10 +50,18 @@ def main(image_dir):
         right_result = extract_aus_from_pil(right_img, f"{filename}_right")
 
         for res in [left_result, right_result]:
-            if res and res.get("au_intensities"):
-                data = res["au_intensities"]
-                data["filename"] = res["source"]
-                all_results.append(data)
+            if res:
+                flat_result = res.copy()  # full dictionary
+                flat_result["filename"] = res.get("source", "unknown")
+
+                # Flatten nested AU sections (optional but recommended for CSV)
+                detected_aus = flat_result.pop("detected_aus", {})
+                au_intensities = flat_result.pop("au_intensities", {})
+                flat_result.update(detected_aus)
+                flat_result.update(au_intensities)
+
+                all_results.append(flat_result)
+
 
     if all_results:
         df = pd.DataFrame(all_results)
