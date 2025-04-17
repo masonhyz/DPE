@@ -1,6 +1,7 @@
 import os
 import sys
 import argparse
+import tempfile
 from PIL import Image
 import pandas as pd
 from tqdm import tqdm
@@ -13,26 +14,33 @@ sys.path.append(libreface_path)
 # Import from LibreFace
 import LibreFace.libreface as libreface
 
-def split_image_half(image_path):
-    """Split image into left and right halves."""
+def split_and_save_temp(image_path, temp_dir):
+    """Split image and save left/right as temp files. Returns two temp paths."""
     img = Image.open(image_path)
     w, h = img.size
     left = img.crop((0, 0, w // 2, h))
     right = img.crop((w // 2, 0, w, h))
-    return left, right
 
-def extract_aus_from_pil(image_pil, tag):
-    """Extract AU data from a PIL image."""
+    base_name = os.path.splitext(os.path.basename(image_path))[0]
+    left_path = os.path.join(temp_dir, f"{base_name}_left.jpg")
+    right_path = os.path.join(temp_dir, f"{base_name}_right.jpg")
+
+    left.save(left_path)
+    right.save(right_path)
+
+    return left_path, right_path
+
+def extract_aus_from_image(image_path, tag=None):
     try:
-        result = libreface.get_facial_attributes(image_pil)
+        result = libreface.get_facial_attributes(image_path)
         if result:
-            result["source"] = tag
+            result["source"] = tag if tag else os.path.basename(image_path)
             return result
         else:
-            print(f"[WARNING] No facial attributes for {tag}")
+            print(f"[WARNING] No facial attributes for {image_path}")
             return None
     except Exception as e:
-        print(f"[ERROR] Failed to process {tag}: {e}")
+        print(f"[ERROR] Failed to process {image_path}: {e}")
         return None
 
 def main(image_dir):
@@ -42,26 +50,26 @@ def main(image_dir):
 
     all_results = []
 
-    for img_path in tqdm(sorted(image_paths), desc="Processing Images"):
-        filename = os.path.basename(img_path)
-        left_img, right_img = split_image_half(img_path)
+    with tempfile.TemporaryDirectory() as temp_dir:
+        for img_path in tqdm(sorted(image_paths), desc="Processing Images"):
+            filename = os.path.basename(img_path)
+            left_path, right_path = split_and_save_temp(img_path, temp_dir)
 
-        left_result = extract_aus_from_pil(left_img, f"{filename}_left")
-        right_result = extract_aus_from_pil(right_img, f"{filename}_right")
+            left_result = extract_aus_from_image(left_path, f"{filename}_left")
+            right_result = extract_aus_from_image(right_path, f"{filename}_right")
 
-        for res in [left_result, right_result]:
-            if res:
-                flat_result = res.copy()  # full dictionary
-                flat_result["filename"] = res.get("source", "unknown")
+            for res in [left_result, right_result]:
+                if res:
+                    flat_result = res.copy()
+                    flat_result["filename"] = res.get("source", "unknown")
 
-                # Flatten nested AU sections (optional but recommended for CSV)
-                detected_aus = flat_result.pop("detected_aus", {})
-                au_intensities = flat_result.pop("au_intensities", {})
-                flat_result.update(detected_aus)
-                flat_result.update(au_intensities)
+                    # Flatten AU and detection data
+                    detected_aus = flat_result.pop("detected_aus", {})
+                    au_intensities = flat_result.pop("au_intensities", {})
+                    flat_result.update(detected_aus)
+                    flat_result.update(au_intensities)
 
-                all_results.append(flat_result)
-
+                    all_results.append(flat_result)
 
     if all_results:
         df = pd.DataFrame(all_results)
@@ -72,7 +80,7 @@ def main(image_dir):
         print("[INFO] No AU data extracted from any image.")
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Split each .png into left/right face and extract AUs.")
-    parser.add_argument("--dir", type=str, required=True, help="Path to the directory containing .png images")
+    parser = argparse.ArgumentParser(description="Split each .jpg into left/right face and extract AUs.")
+    parser.add_argument("--dir", type=str, required=True, help="Path to the directory containing .jpg images")
     args = parser.parse_args()
     main(args.dir)
