@@ -393,7 +393,8 @@ def train(args):
         avg_loss = epoch_loss / num_batches
         print(f"Epoch {epoch + 1}, Average Loss: {avg_loss:.4f}")
         wandb.log({"epoch": epoch + 1, "loss": avg_loss})
-        torch.save(au_module.state_dict(), "./checkpoints/au_module_checkpoint_{epoch}.pth")
+
+        torch.save(au_module.state_dict(), f"./checkpoints/au_module_checkpoint_{epoch}.pth")
 
 
 if __name__ == "__main__":
