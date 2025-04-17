@@ -75,7 +75,6 @@ def main(image_dir):
                     }
 
                     all_results.append(ordered_result)
-                    print(ordered_result)
         
 
     if all_results:
