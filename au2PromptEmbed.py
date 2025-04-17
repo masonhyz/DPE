@@ -15,6 +15,7 @@ import math
 import torch.nn.functional as F
 import random
 from typing import Union, List, Optional
+import wandb
 
 
 def get_timestep_embedding(
@@ -375,16 +376,7 @@ class CustomStableDiffusionPipeline(StableDiffusionInstructPix2PixPipeline):
         image = self.image_processor.preprocess(image)
 
         # 4. set timesteps
-
-        # random_timestep = random.randint(0, num_inference_steps)  # random timestep
-        # self.scheduler.set_timesteps(random_timestep, device=device)  # put random timestep in scheduler
-        # timesteps = self.scheduler.timesteps
-
         timesteps = torch.randint(0, self.scheduler.config.num_train_timesteps, (batch_size,), device=device).long()
-
-        # # 4. set timesteps
-        # self.scheduler.set_timesteps(num_inference_steps, device=device)
-        # timesteps = self.scheduler.timesteps
 
         # 5. Prepare Image latents
         image_latents = self.prepare_image_latents(
@@ -395,9 +387,7 @@ class CustomStableDiffusionPipeline(StableDiffusionInstructPix2PixPipeline):
             device,
             self.do_classifier_free_guidance,
         )
-        # height, width = image_latents.shape[-2:]
-        # height = height * self.vae_scale_factor
-        # width = width * self.vae_scale_factor
+        
 
         target_latents = self.prepare_image_latents(
             target,
@@ -408,24 +398,9 @@ class CustomStableDiffusionPipeline(StableDiffusionInstructPix2PixPipeline):
             self.do_classifier_free_guidance,
         )
         noise = torch.randn_like(target_latents)
-        # print(timesteps)
         noisy_target_latents = self.scheduler.add_noise(target_latents, noise, timesteps)
 
-        # print("noisy:", noisy_target_latents.shape)
-        # print("image:", image_latents.shape)
-
-        # # 6. Prepare latent variables
-        # num_channels_latents = self.vae.config.latent_channels
-        # latents = self.prepare_latents(
-        #     batch_size * num_images_per_prompt,
-        #     num_channels_latents,
-        #     height,
-        #     width,
-        #     prompt_embeds.dtype,
-        #     device,
-        #     generator,
-        #     latents,
-        # )
+        
 
         # 7. Check that shapes of latents and image match the UNet channels
         num_channels_image = image_latents.shape[1]
@@ -439,8 +414,6 @@ class CustomStableDiffusionPipeline(StableDiffusionInstructPix2PixPipeline):
                 " `pipeline.unet` or your `image` input."
             )
 
-        # # 8. Prepare extra step kwargs. TODO: Logic should ideally just be moved out of the pipeline
-        # extra_step_kwargs = self.prepare_extra_step_kwargs(generator, eta)
 
         # 8.1 Add image embeds for IP-Adapter
         added_cond_kwargs = {"image_embeds": image_embeds} if ip_adapter_image is not None else None
@@ -450,10 +423,7 @@ class CustomStableDiffusionPipeline(StableDiffusionInstructPix2PixPipeline):
         self._num_timesteps = len(timesteps)
        
         # concat latents, image_latents in the channel dimension
-        # print("noisy_target_latent shape:", noisy_target_latents.shape)
         scaled_latent_model_input = self.scheduler.scale_model_input(noisy_target_latents, timesteps)
-
-        # print(scaled_latent_model_input.shape, image_latents.shape)
         scaled_latent_model_input = torch.cat([scaled_latent_model_input, image_latents], dim=1)
 
         # predict the noise residual
@@ -466,51 +436,9 @@ class CustomStableDiffusionPipeline(StableDiffusionInstructPix2PixPipeline):
             return_dict=False,
         )[0]
 
-        # # perform guidance
-        # if self.do_classifier_free_guidance:
-        #     noise_pred_text, noise_pred_image, noise_pred_uncond = noise_pred.chunk(3)
-        #     noise_pred = (
-        #         noise_pred_uncond
-        #         + self.guidance_scale * (noise_pred_text - noise_pred_image)
-        #         + self.image_guidance_scale * (noise_pred_image - noise_pred_uncond)
-        #     )
-
-        # # compute the previous noisy sample x_t -> x_t-1
-        # latents = self.scheduler.step(noise_pred, t, latents, **extra_step_kwargs, return_dict=False)[0]
-
-        # if callback_on_step_end is not None:
-        #     callback_kwargs = {}
-        #     for k in callback_on_step_end_tensor_inputs:
-        #         callback_kwargs[k] = locals()[k]
-        #     callback_outputs = callback_on_step_end(self, i, t, callback_kwargs)
-
-        #     latents = callback_outputs.pop("latents", latents)
-        #     prompt_embeds = callback_outputs.pop("prompt_embeds", prompt_embeds)
-        #     negative_prompt_embeds = callback_outputs.pop("negative_prompt_embeds", negative_prompt_embeds)
-        #     image_latents = callback_outputs.pop("image_latents", image_latents)
-
-        
-
-
-        
-        # if not output_type == "latent":
-        #     image = self.vae.decode(latents / self.vae.config.scaling_factor, return_dict=False)[0]
-        #     image, has_nsfw_concept = self.run_safety_checker(image, device, prompt_embeds.dtype)
-        # else:
-        #     image = latents
-        #     has_nsfw_concept = None
-
-        # if has_nsfw_concept is None:
-        #     do_denormalize = [True] * image.shape[0]
-        # else:
-        #     do_denormalize = [not has_nsfw for has_nsfw in has_nsfw_concept]
-
-        # image = self.image_processor.postprocess(image, output_type=output_type, do_denormalize=do_denormalize)
-
-        # Offload all models
+    
         self.maybe_free_model_hooks()
 
-        # return StableDiffusionPipelineOutput(images=image, nsfw_content_detected=has_nsfw_concept)
 
         return noise, noise_pred
 
@@ -518,6 +446,11 @@ class CustomStableDiffusionPipeline(StableDiffusionInstructPix2PixPipeline):
 
 # --- Training Loop ---
 def train(args):
+    wandb.init(
+        project="au-guided-diffusion",  # Change this to your project name
+        config=args,
+        name=f"run-{wandb.util.generate_id()}",
+    )
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     print("==> loading dataset")
@@ -564,6 +497,8 @@ def train(args):
 
         avg_loss = epoch_loss / num_batches
         print(f"Epoch {epoch + 1}, Average Loss: {avg_loss:.4f}")
+        wandb.log({"epoch": epoch + 1, "loss": avg_loss})
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Finetune AU2PromptEmbed preprocesser from image pairs in a directory.")
