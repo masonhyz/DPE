@@ -65,6 +65,8 @@ def main(image_dir):
                     # Flatten AU and detection data
                     detected_aus = flat_result.pop("detected_aus", {})
                     au_intensities = flat_result.pop("au_intensities", {})
+                    flat_keys = ["facial_expression", "pitch", "yaw", "roll"]
+                    flat_result = {k: flat_result.get(k, None) for k in flat_keys}
                     ordered_result = {
                         "filename": res.get("source", "unknown"),
                         **detected_aus,
