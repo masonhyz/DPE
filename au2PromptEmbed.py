@@ -375,15 +375,16 @@ class CustomStableDiffusionPipeline(StableDiffusionInstructPix2PixPipeline):
         image = self.image_processor.preprocess(image)
 
         # 4. set timesteps
-        random_timestep = random.randint(0, num_inference_steps)  # random timestep
-        self.scheduler.set_timesteps(random_timestep, device=device)  # put random timestep in scheduler
-        timesteps = self.scheduler.timesteps
+
+        # random_timestep = random.randint(0, num_inference_steps)  # random timestep
+        # self.scheduler.set_timesteps(random_timestep, device=device)  # put random timestep in scheduler
+        # timesteps = self.scheduler.timesteps
+
+        timesteps = torch.randint(0, self.scheduler.config.num_train_timesteps, (batch_size,), device=device).long()
 
         # # 4. set timesteps
         # self.scheduler.set_timesteps(num_inference_steps, device=device)
         # timesteps = self.scheduler.timesteps
-
-
 
         # 5. Prepare Image latents
         image_latents = self.prepare_image_latents(
@@ -394,8 +395,6 @@ class CustomStableDiffusionPipeline(StableDiffusionInstructPix2PixPipeline):
             device,
             self.do_classifier_free_guidance,
         )
-        print(image_latents.shape)
-
         # height, width = image_latents.shape[-2:]
         # height = height * self.vae_scale_factor
         # width = width * self.vae_scale_factor
@@ -410,8 +409,9 @@ class CustomStableDiffusionPipeline(StableDiffusionInstructPix2PixPipeline):
         )
         noise = torch.randn_like(target_latents)
         print(timesteps)
-        print(timesteps[-1])
-        noisy_target_latents = self.scheduler.add_noise(target_latents, noise, timesteps[-1])
+        noisy_target_latents = self.scheduler.add_noise(target_latents, noise, timesteps)
+
+        print("noisy:", noisy_target_latents)
 
         # # 6. Prepare latent variables
         # num_channels_latents = self.vae.config.latent_channels
@@ -458,7 +458,7 @@ class CustomStableDiffusionPipeline(StableDiffusionInstructPix2PixPipeline):
         # predict the noise residual
         noise_pred = self.unet(
             scaled_latent_model_input,
-            timesteps[-1],
+            timesteps,
             encoder_hidden_states=prompt_embeds,
             added_cond_kwargs=added_cond_kwargs,
             cross_attention_kwargs=cross_attention_kwargs,
