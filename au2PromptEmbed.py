@@ -181,7 +181,6 @@ class AUPix2PixPipeline(nn.Module):
 
     def forward(self, source_images, au_diffs, fake_images):
         prompt_embeds = self.au_processor(au_diffs)
-        print(prompt_embeds.shape)
         out = self.base(
             image=source_images,
             target=fake_images,
@@ -318,12 +317,15 @@ class CustomStableDiffusionPipeline(StableDiffusionInstructPix2PixPipeline):
                 second element is a list of `bool`s indicating whether the corresponding generated image contains
                 "not-safe-for-work" (nsfw) content.
         """
+        callback_steps = None
+
         if ddpm_scheduler is not None:
             self.scheduler = ddpm_scheduler  # replace self.scheduler with ddpm scheduler
-        print("prompt_embeds:", prompt_embeds)
+        
         # 0. Check inputs
         self.check_inputs(
             prompt,
+            callback_steps,
             negative_prompt,
             prompt_embeds,
             negative_prompt_embeds,
