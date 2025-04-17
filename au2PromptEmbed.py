@@ -6,7 +6,7 @@ from torchvision import transforms
 from PIL import Image
 from diffusers import StableDiffusionInstructPix2PixPipeline
 from diffusers import DDPMScheduler
-from diffusers import PipelineImageInput
+# from diffusers import PipelineImageInput
 # from diffusers.models.embeddings import get_timestep_embedding
 from tqdm import tqdm
 import argparse
@@ -199,8 +199,8 @@ class CustomStableDiffusionPipeline(StableDiffusionInstructPix2PixPipeline):
     def __call__(
         self,
         prompt: Union[str, List[str]] = None,
-        image: PipelineImageInput = None,
-        target: PipelineImageInput = None,  # new
+        image = None,
+        target = None,  # new
         num_inference_steps: int = 100,
         guidance_scale: float = 7.5,
         image_guidance_scale: float = 1.5,
