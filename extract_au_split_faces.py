@@ -62,16 +62,19 @@ def main(image_dir):
             for res in [left_result, right_result]:
                 if res:
                     flat_result = res.copy()
-                    flat_result["filename"] = res.get("source", "unknown")
 
                     # Flatten AU and detection data
                     detected_aus = flat_result.pop("detected_aus", {})
                     au_intensities = flat_result.pop("au_intensities", {})
-                    flat_result.update(detected_aus)
-                    flat_result.update(au_intensities)
+                    ordered_result = {
+                        "filename": res.get("source", "unknown"),
+                        **detected_aus,
+                        **au_intensities,
+                        **flat_result  # everything else (landmarks, expression, pose, etc.)
+                    }
 
-                    all_results.append(flat_result)
-                    print(flat_result)
+                    all_results.append(ordered_result)
+                    print(ordered_result)
             i += 1
             if i == 3:
                 break
