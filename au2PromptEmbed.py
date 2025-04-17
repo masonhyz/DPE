@@ -539,7 +539,7 @@ def train(args):
         print(f"{name}: requires_grad={param.requires_grad}")
 
     print("==> setting up optimizer")
-    optimizer = torch.optim.Adam(model.au_processor.parameters(), lr=1e-10)
+    optimizer = torch.optim.Adam(model.au_processor.parameters(), lr=1e-4)
     loss_fn = nn.MSELoss()
 
     for epoch in tqdm(range(10), desc="epoch"):
