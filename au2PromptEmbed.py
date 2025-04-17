@@ -554,7 +554,7 @@ def train(args):
             # print("Generated requires grad:", generated.requires_grad)
             # print("Grad fn:", generated.grad_fn)
 
-            print(noise_pred, noise)
+            # print(noise_pred, noise)
             loss = loss_fn(noise_pred.float(), noise.float()).float()
 
             optimizer.zero_grad()
