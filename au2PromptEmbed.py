@@ -191,7 +191,7 @@ class AUPix2PixPipeline(nn.Module):
             output_type="pt"
         )
         # print(out)
-        return out.images
+        return out
     
 
 class CustomStableDiffusionPipeline(StableDiffusionInstructPix2PixPipeline):
@@ -411,8 +411,8 @@ class CustomStableDiffusionPipeline(StableDiffusionInstructPix2PixPipeline):
         print(timesteps)
         noisy_target_latents = self.scheduler.add_noise(target_latents, noise, timesteps)
 
-        print("noisy:", noisy_target_latents.shape)
-        print("image:", image_latents.shape)
+        # print("noisy:", noisy_target_latents.shape)
+        # print("image:", image_latents.shape)
 
         # # 6. Prepare latent variables
         # num_channels_latents = self.vae.config.latent_channels
@@ -450,10 +450,10 @@ class CustomStableDiffusionPipeline(StableDiffusionInstructPix2PixPipeline):
         self._num_timesteps = len(timesteps)
        
         # concat latents, image_latents in the channel dimension
-        print("noisy_target_latent shape:", noisy_target_latents.shape)
+        # print("noisy_target_latent shape:", noisy_target_latents.shape)
         scaled_latent_model_input = self.scheduler.scale_model_input(noisy_target_latents, timesteps)
 
-        print(scaled_latent_model_input.shape, image_latents.shape)
+        # print(scaled_latent_model_input.shape, image_latents.shape)
         scaled_latent_model_input = torch.cat([scaled_latent_model_input, image_latents], dim=1)
 
         # predict the noise residual
@@ -547,7 +547,7 @@ def train(args):
             source = batch["source"].to(device)
             target = batch["target"].to(device)
             au_diff = batch["au_diff"].to(device)
-            print(source.shape, target.shape, au_diff.shape)
+            # print(source.shape, target.shape, au_diff.shape)
 
             noise_pred, noise = model(source, au_diff, target)
             # print(generated)
