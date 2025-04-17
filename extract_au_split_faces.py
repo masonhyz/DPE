@@ -51,6 +51,7 @@ def main(image_dir):
     all_results = []
 
     with tempfile.TemporaryDirectory() as temp_dir:
+        i = 0
         for img_path in tqdm(sorted(image_paths), desc="Processing Images"):
             filename = os.path.basename(img_path)
             left_path, right_path = split_and_save_temp(img_path, temp_dir)
@@ -71,6 +72,10 @@ def main(image_dir):
 
                     all_results.append(flat_result)
                     print(flat_result)
+            i += 1
+            if i == 3:
+                break
+        
 
     if all_results:
         df = pd.DataFrame(all_results)
