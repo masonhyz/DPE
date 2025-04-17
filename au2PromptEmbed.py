@@ -346,7 +346,6 @@ def train(args):
         project="au-guided-diffusion",
         config=args,
         name=f"run-{wandb.util.generate_id()}",
-        mode="offline"
     )
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
