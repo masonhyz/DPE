@@ -447,6 +447,8 @@ class CustomStableDiffusionPipeline(StableDiffusionInstructPix2PixPipeline):
        
         # concat latents, image_latents in the channel dimension
         scaled_latent_model_input = self.scheduler.scale_model_input(noisy_target_latents, timesteps)
+
+        print(scaled_latent_model_input.shape, image_latents.shape)
         scaled_latent_model_input = torch.cat([scaled_latent_model_input, image_latents], dim=1)
 
         # predict the noise residual
