@@ -340,6 +340,8 @@ class CustomStableDiffusionPipeline(StableDiffusionInstructPix2PixPipeline):
 
 # --- Training Loop ---
 def train(args):
+    import os
+    os.environ["WANDB_DISABLE_SERVICE"] = "True"
     wandb.init(
         project="au-guided-diffusion",
         config=args,
