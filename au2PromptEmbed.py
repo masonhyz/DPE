@@ -213,6 +213,7 @@ class CustomStableDiffusionPipeline(StableDiffusionInstructPix2PixPipeline):
         ddpm_scheduler: DDPMScheduler = None,  # new
         callback_on_step_end_tensor_inputs: List[str] = ["latents"],
         cross_attention_kwargs = None,
+        output_type = "pt",
     ):
         
         callback_steps = None
