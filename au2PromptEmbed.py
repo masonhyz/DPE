@@ -394,6 +394,7 @@ class CustomStableDiffusionPipeline(StableDiffusionInstructPix2PixPipeline):
             device,
             self.do_classifier_free_guidance,
         )
+        print(image_latents.shape)
 
         # height, width = image_latents.shape[-2:]
         # height = height * self.vae_scale_factor
@@ -407,6 +408,7 @@ class CustomStableDiffusionPipeline(StableDiffusionInstructPix2PixPipeline):
             device,
             self.do_classifier_free_guidance,
         )
+        print(target_latents.shape)
         noise = torch.randn_like(target_latents)
         noisy_target_latents = self.scheduler.add_noise(target_latents, noise, timesteps)
 
@@ -446,6 +448,7 @@ class CustomStableDiffusionPipeline(StableDiffusionInstructPix2PixPipeline):
         self._num_timesteps = len(timesteps)
        
         # concat latents, image_latents in the channel dimension
+        print("noisy_target_latent shape:", noisy_target_latents.shape)
         scaled_latent_model_input = self.scheduler.scale_model_input(noisy_target_latents, timesteps)
 
         print(scaled_latent_model_input.shape, image_latents.shape)
