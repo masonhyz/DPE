@@ -410,7 +410,7 @@ class CustomStableDiffusionPipeline(StableDiffusionInstructPix2PixPipeline):
         )
         print(target_latents.shape)
         noise = torch.randn_like(target_latents)
-        noisy_target_latents = self.scheduler.add_noise(target_latents, noise, timesteps)
+        noisy_target_latents = self.scheduler.add_noise(target_latents, noise, timesteps[-1])
 
         # # 6. Prepare latent variables
         # num_channels_latents = self.vae.config.latent_channels
