@@ -408,8 +408,9 @@ class CustomStableDiffusionPipeline(StableDiffusionInstructPix2PixPipeline):
             device,
             self.do_classifier_free_guidance,
         )
-        print(target_latents.shape)
         noise = torch.randn_like(target_latents)
+        print(timesteps)
+        print(timesteps[-1])
         noisy_target_latents = self.scheduler.add_noise(target_latents, noise, timesteps[-1])
 
         # # 6. Prepare latent variables
