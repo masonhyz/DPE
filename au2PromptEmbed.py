@@ -542,7 +542,7 @@ def train(args):
     optimizer = torch.optim.Adam(model.au_processor.parameters(), lr=1e-6)
     loss_fn = nn.MSELoss()
 
-    for epoch in tqdm(range(10), desc="epoch"):
+    for epoch in tqdm(range(25), desc="epoch"):
         epoch_loss = 0.0
         num_batches = 0
 
