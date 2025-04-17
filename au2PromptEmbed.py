@@ -320,7 +320,7 @@ class CustomStableDiffusionPipeline(StableDiffusionInstructPix2PixPipeline):
         """
         if ddpm_scheduler is not None:
             self.scheduler = ddpm_scheduler  # replace self.scheduler with ddpm scheduler
-
+        print("prompt_embeds:", prompt_embeds)
         # 0. Check inputs
         self.check_inputs(
             prompt,
