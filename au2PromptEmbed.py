@@ -74,7 +74,7 @@ class AUToPromptEmbed(nn.Module):
 
     def forward(self, au_diff):
         # Get sinusoidal positional embedding
-        print(au_diff.shape)
+        # print(au_diff.shape)
         sinusoid = get_timestep_embedding(
             timesteps=au_diff,
             embedding_dim=self.embed_dim,
@@ -82,7 +82,7 @@ class AUToPromptEmbed(nn.Module):
             flip_sin_to_cos=False,
             scale=1
         )
-        print(sinusoid.shape)
+        # print(sinusoid.shape)
         # Apply trainable transformation
         return self.projection(sinusoid)
 
@@ -539,7 +539,7 @@ def train(args):
         print(f"{name}: requires_grad={param.requires_grad}")
 
     print("==> setting up optimizer")
-    optimizer = torch.optim.Adam(model.au_processor.parameters(), lr=1e-4)
+    optimizer = torch.optim.Adam(model.au_processor.parameters(), lr=1e-5)
     loss_fn = nn.MSELoss()
 
     for epoch in tqdm(range(10), desc="epoch"):
