@@ -70,6 +70,7 @@ def main(image_dir):
                     flat_result.update(au_intensities)
 
                     all_results.append(flat_result)
+                    print(flat_result)
 
     if all_results:
         df = pd.DataFrame(all_results)
