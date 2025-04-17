@@ -408,7 +408,7 @@ class CustomStableDiffusionPipeline(StableDiffusionInstructPix2PixPipeline):
             self.do_classifier_free_guidance,
         )
         noise = torch.randn_like(target_latents)
-        print(timesteps)
+        # print(timesteps)
         noisy_target_latents = self.scheduler.add_noise(target_latents, noise, timesteps)
 
         # print("noisy:", noisy_target_latents.shape)
@@ -526,7 +526,7 @@ def train(args):
     print(dataset[1]["target"].shape)
     print(dataset[12]["au_diff"].shape)
     print(len(dataset))
-    dataloader = DataLoader(dataset, batch_size=2, shuffle=True)
+    dataloader = DataLoader(dataset, batch_size=16, shuffle=True)
 
     print("==> instantiating model")
     pipe = CustomStableDiffusionPipeline.from_pretrained("timbrooks/instruct-pix2pix", torch_dtype=torch.float16).to(device)
@@ -553,6 +553,8 @@ def train(args):
             # print(generated)
             # print("Generated requires grad:", generated.requires_grad)
             # print("Grad fn:", generated.grad_fn)
+
+            print(noise_pred, noise)
             loss = loss_fn(noise_pred.float(), noise.float()).float()
 
             optimizer.zero_grad()
