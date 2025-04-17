@@ -13,6 +13,7 @@ import pandas as pd
 import math
 import torch.nn.functional as F
 import random
+from typing import Union, List
 
 
 def get_timestep_embedding(
