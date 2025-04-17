@@ -211,13 +211,13 @@ class CustomStableDiffusionPipeline(StableDiffusionInstructPix2PixPipeline):
         latents: Optional[torch.Tensor] = None,
         prompt_embeds: Optional[torch.Tensor] = None,
         negative_prompt_embeds: Optional[torch.Tensor] = None,
-        ip_adapter_image: Optional[PipelineImageInput] = None,
+        ip_adapter_image = None,
         ip_adapter_image_embeds: Optional[List[torch.Tensor]] = None,
         ddpm_scheduler: DDPMScheduler = None,  # new
         output_type: Optional[str] = "pil",
         return_dict: bool = True,
         callback_on_step_end_tensor_inputs: List[str] = ["latents"],
-        cross_attention_kwargs: Optional[Dict[str, Any]] = None,
+        cross_attention_kwargs = None,
         **kwargs,
     ):
         r"""
