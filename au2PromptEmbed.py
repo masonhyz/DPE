@@ -181,6 +181,7 @@ class AUPix2PixPipeline(nn.Module):
 
     def forward(self, source_images, au_diffs, fake_images):
         prompt_embeds = self.au_processor(au_diffs)
+        print(prompt_embeds.shape)
         out = self.base(
             image=source_images,
             target=fake_images,
