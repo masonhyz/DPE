@@ -29,17 +29,17 @@ def split_and_save_temp(image_path, temp_dir):
     return left_path, right_path
 
 def extract_feat_features(image_path, tag=None):
-    # try:
-    df = detector.detect_image(image_path)
-    if df is not None and not df.empty:
-        df["filename"] = tag if tag else os.path.basename(image_path)
-        return df
-    else:
-        print(f"[WARNING] No face detected in: {image_path}")
+    try:
+        df = detector.detect_image(image_path)
+        if df is not None and not df.empty:
+            df["filename"] = tag if tag else os.path.basename(image_path)
+            return df
+        else:
+            print(f"[WARNING] No face detected in: {image_path}")
+            return None
+    except Exception as e:
+        print(f"[ERROR] Failed to process {image_path}: {e}")
         return None
-    # except Exception as e:
-    #     print(f"[ERROR] Failed to process {image_path}: {e}")
-    #     return None
 
 def main(image_dir):
     image_paths = [os.path.join(image_dir, f)
@@ -57,8 +57,6 @@ def main(image_dir):
                 df = extract_feat_features(face_path, f"{filename}{suffix}")
                 if df is not None:
                     all_dfs.append(df)
-                for col in df.columns:
-                    print(col)
 
     if all_dfs:
         full_df = pd.concat(all_dfs, ignore_index=True)
