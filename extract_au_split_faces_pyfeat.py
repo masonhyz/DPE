@@ -57,6 +57,7 @@ def main(image_dir):
                 df = extract_feat_features(face_path, f"{filename}{suffix}")
                 if df is not None:
                     all_dfs.append(df)
+                print(df.head())
 
     if all_dfs:
         full_df = pd.concat(all_dfs, ignore_index=True)
