@@ -47,6 +47,7 @@ def main(image_dir):
                    if f.lower().endswith(".jpg")]
 
     all_dfs = []
+    n = 0
 
     with tempfile.TemporaryDirectory() as temp_dir:
         for img_path in tqdm(sorted(image_paths), desc="Processing Images"):
@@ -58,13 +59,15 @@ def main(image_dir):
                 if df is not None:
                     df = df.loc[:, ~df.columns.str.startswith(("x_", "y_"))]
                     all_dfs.append(df)
-                    print(df.columns)
+                else:
+                    n += 1
 
     if all_dfs:
         full_df = pd.concat(all_dfs, ignore_index=True)
         out_path = os.path.join(image_dir, "pyfeat_all_features.csv")
         full_df.to_csv(out_path, index=False)
         print(f"[INFO] Saved py-feat data to: {out_path}")
+        print(f"{n} rows falied to be extracted")
     else:
         print("[INFO] No data extracted from any image.")
 
