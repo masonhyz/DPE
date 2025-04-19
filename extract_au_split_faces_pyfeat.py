@@ -56,7 +56,9 @@ def main(image_dir):
             for face_path, suffix in zip([left_path, right_path], ["_left", "_right"]):
                 df = extract_feat_features(face_path, f"{filename}{suffix}")
                 if df is not None:
+                    df = df.loc[:, ~df.columns.str.startswith(("x_", "y_"))]
                     all_dfs.append(df)
+                    print(df.columns)
 
     if all_dfs:
         full_df = pd.concat(all_dfs, ignore_index=True)
