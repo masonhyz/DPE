@@ -214,18 +214,16 @@ def train(args):
 
         print("==> setting up optimizer")
 
-        source = dataset[0]["source"]
-        au_diff = dataset[0]["au_diff"]
+        source = dataset[0]["source"].unsqueeze(0).to(device)  # no .half()
+        au_diff = dataset[0]["au_diff"].unsqueeze(0).to(device)
         target = dataset[0]["target"]
 
-        # Add batch dimension
-        source = source.unsqueeze(0).to(device)  # from [C, H, W] to [1, C, H, W]
-        au_diff = au_diff.unsqueeze(0).to(device)  # from [S] to [1, S]
-        target = target.unsqueeze(0).to(device)
+        import torchvision.transforms.functional as TF
+        source_img = TF.to_pil_image(source.squeeze(0).cpu())  # convert to PIL
 
         with torch.no_grad():
             with torch.cuda.amp.autocast(dtype=torch.float16):
-                generated = model(source, au_diff)
+                generated = model(source_img, au_diff)
 
         print(generated.shape, target.shape)
         target_img = to_numpy(target)
