@@ -219,11 +219,13 @@ def train(args):
         target = dataset[0]["target"]
 
         # Add batch dimension
-        source = source.unsqueeze(0).to(device).half()  # from [C, H, W] to [1, C, H, W]
-        au_diff = au_diff.unsqueeze(0).to(device).half()  # from [S] to [1, S]
-        target = target.unsqueeze(0).to(device).half()
+        source = source.unsqueeze(0).to(device)  # from [C, H, W] to [1, C, H, W]
+        au_diff = au_diff.unsqueeze(0).to(device)  # from [S] to [1, S]
+        target = target.unsqueeze(0).to(device)
 
-        generated = model(source, au_diff)
+        with torch.no_grad():
+            with torch.cuda.amp.autocast(dtype=torch.float16):
+                generated = model(source, au_diff)
 
         print(generated.shape, target.shape)
         target_img = to_numpy(target)
