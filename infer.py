@@ -217,6 +217,11 @@ def train(args):
         source = dataset[0]["source"]
         au_diff = dataset[0]["au_diff"]
         target = dataset[0]["target"]
+
+        # Add batch dimension
+        source = source.unsqueeze(0)  # from [C, H, W] to [1, C, H, W]
+        au_diff = au_diff.unsqueeze(0)  # from [S] to [1, S]
+
         generated = model(source, au_diff)
 
         print(generated.shape, target.shape)
