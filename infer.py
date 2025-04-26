@@ -178,7 +178,7 @@ class AUPix2PixPipeline(nn.Module):
             image=source_images,
             prompt_embeds=prompt_embeds,
             guidance_scale=1.0,
-            num_inference_steps=1000,
+            num_inference_steps=50,
         )
         return out.images
     
@@ -202,7 +202,7 @@ def train(args):
     print("==> instantiating model")
     pipe = StableDiffusionInstructPix2PixPipeline.from_pretrained("timbrooks/instruct-pix2pix", torch_dtype=torch.float16).to(device)
     pipe.safety_checker = None
-    
+
     pipe.vae.to(dtype=torch.float32)
 
     au_module = AUToPromptEmbed().to(device)
