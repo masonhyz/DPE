@@ -180,7 +180,7 @@ class AUPix2PixPipeline(nn.Module):
             guidance_scale=1.0,
             num_inference_steps=50,
         )
-        return out.images
+        return out.images[0]
     
 
 def to_numpy(img):
