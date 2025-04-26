@@ -26,7 +26,7 @@ def get_timestep_embedding(
     scale: float = 1,
     max_period: int = 10000,
 ):
-    assert timesteps.ndim == 2, "Input must be of shape [B, S]"
+    assert timesteps.ndim == 2, f"Input must be of shape [B, S], found {timesteps.shape}"
     B, S = timesteps.shape
     half_dim = embedding_dim // 2
 
@@ -235,7 +235,6 @@ def train(args):
         plt.tight_layout()
         plt.show()
         plt.save_fig("comparison.png")
-
 
 
 
