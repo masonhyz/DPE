@@ -87,6 +87,63 @@ class AUToPromptEmbed(nn.Module):
         return self.projection(sinusoid)
 
 
+class AUImagePairDatasetNoPain(Dataset):
+    def __init__(self, image_dir, transform=None):
+        self.image_dir = image_dir
+        self.aus = self._load_aus()
+        self.files = self._find_files()
+        self.transform = transform or transforms.Compose([
+            transforms.Resize((512, 512)),
+            transforms.ToTensor()
+        ])
+        self.n_aus = 12  # There are 12 AU intensity fields
+
+    def _load_aus(self):
+        csv_path = os.path.join(self.image_dir, "extracted_aus.csv")
+        df = pd.read_csv(csv_path)
+        df.set_index("filename", inplace=True)
+        return df
+
+    def _find_files(self):
+        return [f for f in os.listdir(self.image_dir) if f.endswith(".jpg")]
+
+    def __len__(self):
+        return len(self.files)
+
+    def __getitem__(self, idx):
+        img_file = self.files[idx]
+        img_path = os.path.join(self.image_dir, img_file)
+
+        img = Image.open(img_path).convert("RGB")
+        w, h = img.size
+        mid = w // 2
+
+        # Crop left and right halves
+        left_img = img.crop((0, 0, mid, h))
+        right_img = img.crop((mid, 0, w, h))
+
+        left_tensor = self.transform(left_img)
+        right_tensor = self.transform(right_img)
+
+        # Extract AU features for left and right sides
+        left_key = img_file + "_left"
+        right_key = img_file + "_right"
+
+        try:
+            left_aus = self.aus.loc[left_key].values.astype(float)
+            right_aus = self.aus.loc[right_key].values.astype(float)
+            au_diff = torch.tensor(right_aus - left_aus, dtype=torch.float32)
+        except KeyError:
+            print(f"[WARNING] AU data missing for {left_key} or {right_key}, using random.")
+            au_diff = torch.randn(self.n_aus)
+
+        return {
+            "source": left_tensor,
+            "target": right_tensor,
+            "au_diff": au_diff
+        }
+
+
 # --- Custom Dataset ---
 class AUImagePairDataset(Dataset):
     def __init__(self, image_dir, transform=None):
@@ -171,8 +228,8 @@ class AUPix2PixPipeline(nn.Module):
             num_train_timesteps=1000,
             beta_start=0.0001,
             beta_end=0.02,
-            beta_schedule="linear",  # or "squaredcos_cap_v2" for cosine beta schedule
-            prediction_type="epsilon",  # the usual choice in DDPM training
+            beta_schedule="linear",
+            prediction_type="epsilon",
         )
 
         # Freeze diffusion model
@@ -349,7 +406,7 @@ def train(args):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     print("==> loading dataset")
-    dataset = AUImagePairDataset(args.dir)
+    dataset = AUImagePairDatasetNoPain(args.dir)
     print(dataset[0]["source"].shape)
     print(dataset[1]["target"].shape)
     print(dataset[12]["au_diff"].shape)
